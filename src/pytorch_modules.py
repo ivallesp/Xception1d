@@ -31,3 +31,42 @@ class DepthwiseSeparableConv1d(nn.Module):
         return out
 
 
+class TransferenceFunctionModule(nn.Module):
+    def __init__(self):
+        super(TransferenceFunctionModule, self).__init__()
+
+    def forward(self, x):
+        return x
+
+
+class XceptionModule1d(nn.Module):
+    # Implementation of the xception basic conv block (1-dimensional). Code based on:
+    def __init__(self, in_channels, out_channels, n_modules, kernel_size=3, pooling_stride=1):
+        super(XceptionModule1d, self).__init__()
+        padding = int((kernel_size - 1) / 2)
+        padding_pool = int((pooling_stride - 1) / 2)
+        if pooling_stride > 1 or in_channels != out_channels:
+            self.skip_conn_module = nn.Conv1d(in_channels=in_channels, out_channels=out_channels,
+                                              kernel_size=1, stride=pooling_stride, padding=0)
+        else:
+            self.skip_conn_module = TransferenceFunctionModule()
+
+        modules = []
+        for i in range(n_modules):
+            modules.append(nn.ReLU(True))
+            modules.append(nn.BatchNorm1d(in_channels))
+            modules.append(DepthwiseSeparableConv1d(in_channels = in_channels,
+                                                    out_channels = out_channels,
+                                                    kernel_size = kernel_size,
+                                                    padding = padding))
+
+            in_channels = out_channels
+        if pooling_stride > 1:
+            modules.append(nn.AvgPool1d(kernel_size=pooling_stride, stride=pooling_stride, ceil_mode=True, padding=0))
+        self.core = nn.Sequential(*modules)
+
+
+    def forward(self, x):
+        main = self.core.forward(x)
+        skip = self.skip_conn_module.forward(x)
+        return main + skip
