@@ -40,10 +40,6 @@ class TestGetNumberOfParameters(TestCase):
                                               nn.MaxPool2d(3))
                 self.model_linear = nn.Sequential(nn.Linear(128*10, 3),
                                                   nn.Sigmoid())
-            def forward(self, x):
-                h = self.model_cnn.forward(x)
-                h = h.view(128, 0)
-                return self.model_linear.forward(h)
 
         model = Arch()
         n_params = get_number_of_parameters(model)

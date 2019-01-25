@@ -4,5 +4,6 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install coverage
+  - pip install codecov
 script:
   - nosetests -v --with-coverage --cover-tests --cover-package=.
