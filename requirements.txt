@@ -1,0 +1,6 @@
+numpy==1.15.1
+scipy==1.1.0
+tensorboard==1.11.0
+tensorboardX==1.5
+tensorflow==1.11.0
+torch==0.4.1
