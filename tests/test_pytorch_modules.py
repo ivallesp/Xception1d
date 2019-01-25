@@ -2,7 +2,7 @@ from unittest import TestCase
 import torch
 
 from src.pytorch_modules import DepthwiseSeparableConv2d, DepthwiseSeparableConv1d, TransferenceFunctionModule, \
-    XceptionModule1d
+    XceptionModule1d, Flatten
 
 
 class TestDepthwiseSeparableConv2d(TestCase):
@@ -17,6 +17,18 @@ class TestDepthwiseSeparableConv2d(TestCase):
                                            out_channels=64)
         output = conv_op.forward(self.input_tensor)
         self.assertEqual(output.shape, (128, 64, 25, 25))
+
+    def test_shapes_with_strides(self):
+        conv_op = DepthwiseSeparableConv2d(in_channels=3,
+                                           out_channels=64,
+                                           stride=2)
+        output = conv_op.forward(self.input_tensor)
+        self.assertEqual(output.shape, (128, 64, 13, 13))
+        conv_op = DepthwiseSeparableConv2d(in_channels=3,
+                                           out_channels=64,
+                                           stride=5)
+        output = conv_op.forward(self.input_tensor)
+        self.assertEqual(output.shape, (128, 64, 5, 5))
 
     def test_gradient_check(self):
         conv_op = DepthwiseSeparableConv2d(in_channels=3,
@@ -43,6 +55,18 @@ class TestDepthwiseSeparableConv1d(TestCase):
                                            out_channels=64)
         output = conv_op.forward(self.input_tensor)
         self.assertEqual(output.shape, (128, 64, 25))
+
+    def test_shapes_with_strides(self):
+        conv_op = DepthwiseSeparableConv1d(in_channels=3,
+                                           out_channels=64,
+                                           stride=2)
+        output = conv_op.forward(self.input_tensor)
+        self.assertEqual(output.shape, (128, 64, 13))
+        conv_op = DepthwiseSeparableConv1d(in_channels=3,
+                                           out_channels=64,
+                                           stride=5)
+        output = conv_op.forward(self.input_tensor)
+        self.assertEqual(output.shape, (128, 64, 5))
 
     def test_gradient_check(self):
         conv_op = DepthwiseSeparableConv1d(in_channels=3,
@@ -177,3 +201,24 @@ class TestXceptionModule1d(TestCase):
             opt.step()
         new_loss = conv_op.forward(self.input_tensor).sum()
         self.assertGreater(loss, new_loss)
+
+
+class TestFlatten(TestCase):
+    def setUp(self):
+        self.input1d = torch.rand(64, 33)
+        self.input2d = torch.rand(128, 3, 25)
+        self.input3d = torch.rand(256, 20, 30, 50)
+        self.flatten = Flatten()
+
+    def tearDown(self):
+        pass
+
+    def test_shapes(self):
+        self.assertTrue(self.flatten.forward(self.input1d).shape == self.input1d.shape)
+        self.assertTrue(self.flatten.forward(self.input2d).shape == (128, 3*25))
+        self.assertTrue(self.flatten.forward(self.input3d).shape == (256, 20*30*50))
+
+    def test_values(self):
+        self.assertTrue(self, (self.flatten.forward(self.input1d).sum(dim=1) == self.input1d.sum(dim=1)).all())
+        self.assertTrue(self, (self.flatten.forward(self.input2d).sum(dim=1) == self.input2d.sum(dim=(1, 2))).all())
+        self.assertTrue(self, (self.flatten.forward(self.input3d).sum(dim=1) == self.input3d.sum(dim=(1, 2, 3))).all())
