@@ -3,3 +3,5 @@ data/*
 .pytest_cache
 *.pyc
 .idea
+.coverage
+coverage.xml
