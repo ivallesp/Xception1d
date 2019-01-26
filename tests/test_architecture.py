@@ -1,6 +1,7 @@
 from unittest import TestCase
 import torch
 from torch import nn
+from scipy.io import wavfile
 
 import numpy as np
 
@@ -30,3 +31,13 @@ class TestXceptionArchitecture1d(TestCase):
         loss_0 = self.model.step(self.x, self.y)
         loss_1 = self.model.calculate_loss(self.x, self.y)
         self.assertGreater(loss_0, loss_1)
+
+    def test_forward_pass_with_real_wav_file(self):
+        sr, wav = wavfile.read("./tests/examples/testaudio.wav")
+        wav = np.pad(wav, int((16000-len(wav))/2), "constant")
+        wav = np.expand_dims(np.expand_dims(wav, 0),1)
+        wav = torch.from_numpy(wav).float()
+        self.model.eval()
+        output = self.model.forward(wav)
+        self.model.train()
+        # No error means test has passed
