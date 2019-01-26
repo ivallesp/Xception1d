@@ -170,7 +170,3 @@ class TestDataTools(TestCase):
         sample_rate, wav = read_wavfile(self.wav_filepath)
         wav_processed = randomly_distort_wavfile(wav=wav, sr=sample_rate)
         self.assertEqual(len(wav), len(wav_processed))
-        peak = max(np.abs(np.max(wav)), np.abs(np.min(wav)))
-        new_peak = max(np.abs(np.max(wav)), np.abs(np.min(wav)))
-        self.assertAlmostEqual(peak, new_peak, delta=0.5 * peak)
-        self.assertAlmostEqual(np.mean(wav), np.mean(wav_processed), delta=0.1 * peak)
