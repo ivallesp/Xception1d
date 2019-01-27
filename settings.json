@@ -1,5 +1,6 @@
 {
   "paths": {
     "tensorboard_logs": "C:/Users/Ivan Valles Perez/.logs_tensorboard"
-  }
+  },
+  "n_augmentations": 5
 }

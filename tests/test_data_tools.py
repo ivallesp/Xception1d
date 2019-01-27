@@ -4,7 +4,7 @@ import numpy as np
 
 from src.data_tools import read_wavfile, normalize_wavfile, fix_wavfile_duration, \
     fix_wavfile_length, saturate_wavfile, resample_wavfile, time_offset_wavfile, add_noise_to_wavfile, \
-    pitch_shift_wavfile, randomly_distort_wavfile
+    pitch_shift_wavfile, randomly_distort_wavfile, draw_random_subclip
 
 
 class TestDataTools(TestCase):
@@ -170,3 +170,9 @@ class TestDataTools(TestCase):
         sample_rate, wav = read_wavfile(self.wav_filepath)
         wav_processed = randomly_distort_wavfile(wav=wav, sr=sample_rate)
         self.assertEqual(len(wav), len(wav_processed))
+
+    def test_draw_random_subclip(self):
+        sample_rate, wav = read_wavfile(self.wav_filepath)
+        subclip = draw_random_subclip(wav, 1000)
+        self.assertEqual(1000, len(subclip))
+        self.assertLess(0.5, np.max(np.array(subclip) != 0))

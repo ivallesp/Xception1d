@@ -38,3 +38,4 @@ class TestDataTools(TestCase):
     def test_get_training_data_path(self):
         path = get_training_data_path()
         self.assertTrue(os.path.exists(path))
+

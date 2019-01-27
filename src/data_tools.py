@@ -1,12 +1,14 @@
 import os
-from scipy.io import wavfile
-from librosa.effects import pitch_shift
 import random
-import scipy as sp
+
 import numpy as np
+import scipy as sp
+from librosa.effects import pitch_shift
+from scipy.io import wavfile
+
 
 def read_wavfile(filepath):
-    assert os.path.exists(filepath)
+    assert os.path.exists(filepath), filepath + "not found!"
     sample_rate, wave = wavfile.read(filepath)
     return sample_rate, wave
 
@@ -96,15 +98,26 @@ def pitch_shift_wavfile(wav, sr, n_octaves):
     return new_wav
 
 
-def randomly_distort_wavfile(wav, sr):
+def randomly_distort_wavfile(wav, sr=16000, pitch=True, resample=True, saturate=True, offset=True, noise=True):
     peak = max(np.abs(np.max(wav)), np.abs(np.min(wav)))
-    rand_pitch_shift = random.normalvariate(0, 0.1)
-    rand_resample = random.normalvariate(0, 0.2)
-    nw = pitch_shift_wavfile(wav, sr, rand_pitch_shift)
-    nw = resample_wavfile(nw, 1 / (1 + abs(rand_resample)) if rand_resample < 0 else (1 + rand_resample))
-    nw = saturate_wavfile(nw, 1.2 / (1 + abs(random.expovariate(2.5))))
-    nw = time_offset_wavfile(nw, random.normalvariate(0, 0.1))
-    nw = add_noise_to_wavfile(nw, random.normalvariate(0, 0.05) * (random.random() > 0.7), True)
-    new_peak = max(np.abs(np.max(nw)), np.abs(np.min(nw)))
-    nw = peak * nw / new_peak
-    return nw
+    if pitch:
+        rand_pitch_shift = random.normalvariate(0, 0.1)
+        wav = pitch_shift_wavfile(wav, sr, rand_pitch_shift)
+    if resample:
+        rand_resample = random.normalvariate(0, 0.2)
+        wav = resample_wavfile(wav, 1 / (1 + abs(rand_resample)) if rand_resample < 0 else (1 + rand_resample))
+    if saturate:
+        wav = saturate_wavfile(wav, 1.2 / (1 + abs(random.expovariate(2.5))))
+    if offset:
+        wav = time_offset_wavfile(wav, random.normalvariate(0, 0.1))
+    if noise:
+        wav = add_noise_to_wavfile(wav, random.normalvariate(0, 0.05) * (random.random() > 0.7), True)
+    new_peak = max(np.abs(np.max(wav)), np.abs(np.min(wav)))
+    wav = peak * wav / new_peak
+    return wav
+
+
+def draw_random_subclip(clip, n_samples):
+    assert (len(clip) > n_samples)
+    index = random.choice(range(len(clip) - 1 - n_samples))
+    return clip[index:(index + n_samples)]
