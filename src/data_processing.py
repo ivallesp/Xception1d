@@ -3,11 +3,14 @@ import random
 from multiprocessing.dummy import Pool
 
 import numpy as np
+import torch
 from scipy.io import wavfile
+from tqdm import tqdm
 
 from src.common_paths import get_training_data_path
 from src.data_tools import read_wavfile, draw_random_subclip, randomly_distort_wavfile, fix_wavfile_length, \
     normalize_wavfile
+from src.general_utilities import batching
 
 
 def get_list_of_wav_paths(include_augmentations=False):
@@ -30,6 +33,7 @@ def get_list_of_wav_paths(include_augmentations=False):
     list_train = np.setdiff1d(list_train, list_val)
     list_train = list_train.tolist()
     list_train = list(filter(lambda x: "background_noise" not in x, list_train))
+
     return list_train, list_val, list_test
 
 
@@ -104,3 +108,69 @@ def batch_augment_files(list_of_files, n_times, n_jobs, folder_name="augmented")
             list(map(lambda x: generate_augmented_wav(filepath=x,
                                                       folder_name=folder_name,
                                                       suffix=str(i)), list_of_files))
+
+
+class DataFeeder:
+    def __init__(self, file_paths, batch_size, add_noise=False):
+        self.known_classes = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown",
+                              "silence"]
+        self.target_encoder = dict(zip(self.known_classes, range(len(self.known_classes))))
+        self.target_decoder = {v: k for k, v in self.target_encoder.items()}
+        self.file_paths = file_paths
+        self.set_batch_size(batch_size)
+        self.noise_clips = load_real_noise_clips()
+        self.load_data(file_paths, add_noise=add_noise)
+        self.shuffle_data()
+        self.prepare_data()
+
+    def prepare_data(self):
+        self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
+        self.targets = list(map(self.target_encoder.get, self.targets))
+        self.audios = np.array(self.audios)
+        self.targets = np.array(self.targets)
+
+    def shuffle_data(self):
+        joined_list = list(zip(self.audios, self.targets))
+        random.shuffle(joined_list)
+        self.audios, self.targets = list(zip(*joined_list))  # Shuffle!
+
+    def load_data(self, file_paths, add_noise):
+        self.audios = []
+        self.targets = []
+        for file_path in tqdm(file_paths):
+            if os.path.exists(file_path):
+                try:
+                    _, wav = read_wavfile(file_path)
+                    wav = preprocess_wav(wav, distort=False)
+                    target = os.path.split(os.path.split(file_path)[0])[1]
+                    self.audios.append(wav)
+                    self.targets.append(target)
+                except:
+                    print(f"Error reading {file_path}")
+            else:
+                print(f"Fatal error, file {file_path} not found")
+        if add_noise:
+            n_artificial_noise_samples = int(0.05 * len(self.audios))
+            n_real_noise_samples = int(0.15 * len(self.audios))
+            for i in tqdm(range(n_real_noise_samples)):
+                wav = get_random_real_noise_subclip(n_samples=16000, noise_clips=self.noise_clips)
+                wav = preprocess_wav(wav, distort=False)
+                self.audios.append(wav)
+                self.targets.append("silence")
+            for i in range(n_artificial_noise_samples):
+                wav = generate_white_noise_clip(16000)
+                wav = preprocess_wav(wav, distort=False)
+                self.audios.append(wav)
+                self.targets.append("silence")
+
+    def get_batches(self, return_incomplete_batches=False):
+        for batch in batching(list_of_iterables=[self.audios, self.targets],
+                              n=self.batch_size,
+                              return_incomplete_batches=return_incomplete_batches):
+            batch[0] = np.expand_dims(np.array(batch[0]), 1)
+            batch[0] = torch.from_numpy(batch[0])
+            batch[1] = torch.from_numpy(batch[1])
+            yield batch
+
+    def set_batch_size(self, batch_size):
+        self.batch_size = batch_size

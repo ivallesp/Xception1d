@@ -1,9 +1,8 @@
 from unittest import TestCase
-import torch
-from torch import nn
-from scipy.io import wavfile
 
 import numpy as np
+import torch
+from scipy.io import wavfile
 
 from src.architecture import XceptionArchitecture1d
 
@@ -24,12 +23,12 @@ class TestXceptionArchitecture1d(TestCase):
         self.assertEqual(y_hat.shape, (self.batch_size, self.n_classes))
 
     def test_loss(self):
-        loss = self.model.calculate_loss(self.x, self.y)
+        loss, _ = self.model.calculate_loss(self.x, self.y)
         self.assertGreater(loss, 0)
 
     def test_gradient_check(self):
-        loss_0 = self.model.step(self.x, self.y)
-        loss_1 = self.model.calculate_loss(self.x, self.y)
+        loss_0, _ = self.model.step(self.x, self.y)
+        loss_1, _ = self.model.calculate_loss(self.x, self.y)
         self.assertGreater(loss_0, loss_1)
 
     def test_forward_pass_with_real_wav_file(self):

@@ -1,6 +1,8 @@
 import torch
 from torch import nn
+
 from src.pytorch_modules import XceptionModule1d, Flatten, DepthwiseSeparableConv1d
+
 
 class XceptionArchitecture1d(nn.Module):
     def __init__(self, n_classes, lr=2.5e-4):
@@ -59,11 +61,11 @@ class XceptionArchitecture1d(nn.Module):
     def calculate_loss(self, x, y):
         y_hat = self.forward(x)
         loss = self.loss(y_hat, y.squeeze().long())
-        return loss
+        return loss, y_hat
 
     def step(self, x, y):
-        loss = self.calculate_loss(x, y)
+        loss, y_hat = self.calculate_loss(x, y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        return loss
+        return loss, y_hat

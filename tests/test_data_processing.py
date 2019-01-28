@@ -8,11 +8,11 @@ import numpy as np
 from src.common_paths import get_training_data_path
 from src.data_processing import get_list_of_wav_paths, generate_white_noise_clip, load_real_noise_clips, \
     get_random_real_noise_subclip, load_random_real_noise_clip, preprocess_wav, generate_augmented_wav, \
-    batch_augment_files
+    batch_augment_files, DataFeeder
 from src.data_tools import read_wavfile
 
 
-class TestDataTools(TestCase):
+class TestDataProcessing(TestCase):
     def setUp(self):
         self.wav_filepath = "./tests/examples/testaudio.wav"
 
@@ -34,6 +34,10 @@ class TestDataTools(TestCase):
         set_test = set([x.split(os.sep)[-2] for x in test])
         self.assertTrue(set_train == set_val)
         self.assertTrue(set_train == set_test)
+        train_aug, val_aug, test_aug = get_list_of_wav_paths(include_augmentations=True)
+        self.assertGreaterEqual(len(train_aug), len(train))
+        self.assertEqual(len(val_aug), len(val))
+        self.assertEqual(len(test_aug), len(test))
 
     def test_generate_white_noise_clip(self):
         clip = generate_white_noise_clip(300)
@@ -112,3 +116,14 @@ class TestDataTools(TestCase):
                 os.remove(output_filepath)
 
         shutil.rmtree(os.path.join(get_training_data_path(), "test_augmentation"))
+
+    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
+    def test_data_feeder(self):
+        train, val, test = get_list_of_wav_paths()
+        list_of_files = train[0:20] + ["/test/errors"]
+        df = DataFeeder(file_paths=list_of_files, batch_size=5)
+        self.assertEqual(20, len(df.audios))
+        self.assertEqual(20, len(df.targets))
+        list_of_batches = list(df.get_batches())
+        self.assertEqual(4, len(list_of_batches))
+        self.assertEqual(2, len(list_of_batches[0]))
