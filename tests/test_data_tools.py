@@ -32,12 +32,16 @@ class TestDataTools(TestCase):
         wav_1_processed = normalize_wavfile(wav_1, 1)
         wav_2_processed = normalize_wavfile(wav_2, 2)
         wav_3_processed = normalize_wavfile(wav_3, 3)
+        wavs_peak_processed = [normalize_wavfile(wav, normalize_to_peak=True) for wav in [wav_0, wav_1, wav_2, wav_3]]
         self.assertTrue(max(wav_0_processed) == max(wav_1_processed) == max(wav_2_processed) == max(wav_3_processed))
         self.assertTrue(min(wav_0_processed) == min(wav_1_processed) == min(wav_2_processed) == min(wav_3_processed))
         self.assertLessEqual(max(wav_0_processed), 1)
         self.assertAlmostEqual(max(wav_0_processed), 1, delta=0.75)
         self.assertGreaterEqual(min(wav_0_processed), -1)
         self.assertAlmostEqual(min(wav_0_processed), -1, delta=0.75)
+        for wav_processed in wavs_peak_processed:
+            self.assertGreaterEqual(1, wav_processed.max())
+            self.assertLessEqual(-1, wav_processed.max())
         with self.assertRaises(ValueError):
             normalize_wavfile(np.zeros(16000), normalize_to_peak=True) 
         with self.assertRaises(ValueError):

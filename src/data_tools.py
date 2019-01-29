@@ -10,6 +10,7 @@ from scipy.io import wavfile
 def read_wavfile(filepath):
     assert os.path.exists(filepath), filepath + "not found!"
     sample_rate, wave = wavfile.read(filepath)
+    wave = wave.astype(np.float32)
     return sample_rate, wave
 
 
@@ -18,13 +19,13 @@ def normalize_wavfile(wav, mode=2, normalize_to_peak=False):
     # param mode: 0 is 32-bit floating point, 1 is 32-bit PCM, 2 is 16-bit pcm (default)
     # and 3 is 8-bit pcm
     if normalize_to_peak:
-        peak = max(abs(max(wav)), abs(min(wav)))
+        peak = np.max(np.abs(wav))
         if peak == 0:
             raise ValueError("wavfile is constant zero, impossible to normalize!")
         elif np.isnan(wav).any():
             raise ValueError("wavfile contains nan values, corrupted!")
-        else:            
-            return wav/max(abs(max(wav)), abs(min(wav)))
+        else:
+            return wav / peak
     if mode == 0:
         return wav
     elif mode == 1:

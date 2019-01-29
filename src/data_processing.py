@@ -123,6 +123,8 @@ class DataFeeder:
         self.shuffle_data()
         self.prepare_data()
         assert not np.isnan(self.audios).any()
+        assert self.audios.max() <= 1
+        assert self.audios.min() >= -1
         
     def prepare_data(self):
         self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
@@ -138,6 +140,7 @@ class DataFeeder:
     def load_data(self, file_paths, add_noise):
         self.audios = []
         self.targets = []
+        # Load data
         for file_path in tqdm(file_paths):
             if os.path.exists(file_path):
                 try:

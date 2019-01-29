@@ -54,7 +54,7 @@ class XceptionModule1d(nn.Module):
         modules = []
         for i in range(n_modules):
             modules.append(nn.ReLU(True))
-            modules.append(nn.BatchNorm1d(in_channels))
+            modules.append(nn.BatchNorm1d(in_channels, momentum=0.995))
             modules.append(DepthwiseSeparableConv1d(in_channels = in_channels,
                                                     out_channels = out_channels,
                                                     kernel_size = kernel_size,
