@@ -122,7 +122,8 @@ class DataFeeder:
         self.load_data(file_paths, add_noise=add_noise)
         self.shuffle_data()
         self.prepare_data()
-
+        assert not np.isnan(self.audios).any()
+        
     def prepare_data(self):
         self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
         self.targets = list(map(self.target_encoder.get, self.targets))

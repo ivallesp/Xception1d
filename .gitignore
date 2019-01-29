@@ -5,3 +5,5 @@ data/*
 .idea
 .coverage
 coverage.xml
+settings.json
+models

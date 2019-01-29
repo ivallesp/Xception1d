@@ -38,7 +38,15 @@ class TestDataTools(TestCase):
         self.assertAlmostEqual(max(wav_0_processed), 1, delta=0.75)
         self.assertGreaterEqual(min(wav_0_processed), -1)
         self.assertAlmostEqual(min(wav_0_processed), -1, delta=0.75)
-
+        with self.assertRaises(ValueError):
+            normalize_wavfile(np.zeros(16000), normalize_to_peak=True) 
+        with self.assertRaises(ValueError):
+            wav_corrupted = np.random.rand(16000)
+            wav_corrupted[4000] = np.nan
+            normalize_wavfile(wav_corrupted, normalize_to_peak=True)
+        with self.assertRaises(ValueError):
+            normalize_wavfile(np.ones(16000)*np.nan, normalize_to_peak=True) 
+    
     def test_normalize_wavfile_to_peaks(self):
         sample_rate, wav = read_wavfile(self.wav_filepath)
         wav_processed = normalize_wavfile(wav, normalize_to_peak=True)

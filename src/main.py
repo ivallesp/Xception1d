@@ -26,9 +26,11 @@ version_name = json.load(open("settings.json"))["version_id"]
 n_augmentations = json.load(open("settings.json"))["n_augmentations"]
 if n_augmentations > 0:
     train_files, _, _ = get_list_of_wav_paths()
-    tr = [os.path.join(get_training_data_path(), "audio", f) for f in train_files]
-    batch_augment_files(tr, n_augmentations, n_jobs=n_jobs)
+    batch_augment_files(train_files, n_augmentations, n_jobs=n_jobs)
 
+random.seed(655321)
+np.random.seed(655321)
+torch.random.manual_seed(655321)
 # Load all data paths and build the data feeders
 tr, va, te = get_list_of_wav_paths(include_augmentations=True)
 data_feeder_train = DataFeeder(tr, batch_size=batch_size, add_noise=True)
@@ -47,6 +49,7 @@ c = 0
 for epoch in range(n_epochs):
     # Evaluate model
     loss_val, accuracy_val = 0, 0
+    model.eval()
     for n, (batch_audio_val, batch_target_val) in tqdm(enumerate(data_feeder_validation.get_batches())):
         if run_in_gpu:
             batch_audio_val = batch_audio_val.cuda()
@@ -54,6 +57,7 @@ for epoch in range(n_epochs):
         loss, y_hat = model.calculate_loss(batch_audio_val, batch_target_val)
         loss_val += loss.cpu().detach().numpy()
         accuracy_val += (batch_target_val.cpu().numpy() == y_hat.argmax(dim=1).cpu().numpy()).mean()
+    model.train()
     print("\n")
     loss_val /= (n + 1)
     accuracy_val /= (n + 1)
@@ -85,5 +89,3 @@ for epoch in range(n_epochs):
 
     print(
         f"[{epoch + 1}] Loss train: {loss_train} | Acc train: {accuracy_train} | Loss val: {loss_val} | Acc val: {accuracy_val}")
-    if epoch >= 5:
-        break
