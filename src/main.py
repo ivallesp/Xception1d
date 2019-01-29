@@ -9,7 +9,7 @@ from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
 from src.architecture import XceptionArchitecture1d
-from src.common_paths import get_training_data_path, get_tensorboard_logs_path, get_model_path
+from src.common_paths import get_tensorboard_logs_path, get_model_path
 from src.data_processing import get_list_of_wav_paths, batch_augment_files, DataFeeder
 
 random.seed(655321)

@@ -138,6 +138,7 @@ class DataFeeder:
     def load_data(self, file_paths, add_noise):
         self.audios = []
         self.targets = []
+        # Load data
         for file_path in tqdm(file_paths):
             if os.path.exists(file_path):
                 try:

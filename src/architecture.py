@@ -13,7 +13,7 @@ class XceptionArchitecture1d(nn.Module):
         self.init_flow = nn.Sequential(nn.Conv1d(in_channels=1, out_channels=32,
                                                  stride=4, padding=4, kernel_size=9),
                                        nn.ReLU(True),
-                                       nn.BatchNorm1d(32),
+                                       nn.BatchNorm1d(32, momentum=0.995),
                                        nn.Conv1d(in_channels=32, out_channels=64,
                                                  stride=2, padding=4, kernel_size=5))
 
@@ -34,18 +34,18 @@ class XceptionArchitecture1d(nn.Module):
         self.exit_flow = nn.Sequential(XceptionModule1d(in_channels=728, out_channels=1024,
                                                         n_modules=2, kernel_size=3, pooling_stride=2),
                                        nn.ReLU(True),
-                                       nn.BatchNorm1d(1024),
+                                       nn.BatchNorm1d(1024, momentum=0.995),
                                        DepthwiseSeparableConv1d(in_channels=1024, out_channels=1536, kernel_size=3,
                                                                 stride=2),
                                        nn.ReLU(True),
-                                       nn.BatchNorm1d(1536),
+                                       nn.BatchNorm1d(1536, momentum=0.995),
                                        DepthwiseSeparableConv1d(in_channels=1536, out_channels=2048, kernel_size=3,
                                                                 stride=2))
 
         # FC flow
         self.fc_flow = nn.Sequential(Flatten(),
                                      nn.ReLU(True),
-                                     nn.BatchNorm1d(2048*32),
+                                     nn.BatchNorm1d(2048 * 32, momentum=0.995),
                                      nn.Linear(2048*32, n_classes))
 
         self.optimizer = torch.optim.Adam(params=self.parameters(), lr=lr)
