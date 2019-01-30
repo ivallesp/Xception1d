@@ -1,3 +1,5 @@
+import os
+
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
@@ -15,3 +17,11 @@ def batching(list_of_iterables, n=1, infinite=False, return_incomplete_batches=F
 
         if not infinite:
             break
+
+
+def recursive_listdir(path):
+    files = []
+    for dirName, subdirList, fileList in os.walk(path):
+        for fname in fileList:
+            filepath = os.path.join(dirName, fname)
+            yield filepath
