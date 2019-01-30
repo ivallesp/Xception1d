@@ -30,6 +30,7 @@ class TestDataProcessing(TestCase):
         self.assertEqual(64727 - 6, len(whole_list))
         self.assertEqual(158538, len(scoring))
         self.assertTrue(all([os.path.exists(fn) for fn in whole_list]))
+        self.assertTrue(all([os.path.exists(fn) for fn in scoring]))
         set_train = set([x.split(os.sep)[-2] for x in train])
         set_val = set([x.split(os.sep)[-2] for x in val])
         set_test = set([x.split(os.sep)[-2] for x in test])
@@ -131,4 +132,19 @@ class TestDataProcessing(TestCase):
         self.assertEqual(4, len(list_of_batches))
         self.assertEqual(2, len(list_of_batches[0]))
         self.assertLessEqual(1, np.max(np.abs(df.audios)))
+        self.assertIsNotNone(list_of_batches[0][1])
         self.assertGreaterEqual(11, np.max(df.targets))
+
+    @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
+    def test_data_feeder_with_scoring(self):
+        _, _, _, scoring = get_list_of_wav_paths()
+        list_of_files = scoring[0:1000] + ["/test/errors"]
+        df = DataFeeder(file_paths=list_of_files, batch_size=5, add_noise=False, shuffle=False, scoring=True)
+        self.assertEqual(1000, len(df.audios))
+        self.assertNotIn("targets", dir(df))
+        list_of_batches = list(df.get_batches())
+        self.assertEqual(200, len(list_of_batches))
+        self.assertEqual(2, len(list_of_batches[0]))
+        self.assertIsNone(list_of_batches[0][1])
+        self.assertGreaterEqual(1, np.max(np.abs(df.audios)))
+        self.assertLess(0, np.max(np.abs(df.audios)))

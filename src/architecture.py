@@ -1,18 +1,18 @@
 import torch
 from torch import nn
 
-from src.pytorch_modules import XceptionModule1d, Flatten, DepthwiseSeparableConv1d
+from src.pytorch_modules import XceptionModule1d, Flatten, DepthwiseSeparableConv1d, Swish
 
 
 class XceptionArchitecture1d(nn.Module):
     def __init__(self, n_classes, lr=2.5e-4):
         # Initialization
-        # Remember not to add ReLU at the end
+        # Remember not to add the activation at the end
         super(XceptionArchitecture1d, self).__init__()
         self.loss = nn.CrossEntropyLoss()
         self.init_flow = nn.Sequential(nn.Conv1d(in_channels=1, out_channels=32,
                                                  stride=4, padding=4, kernel_size=9),
-                                       nn.ReLU(True),
+                                       Swish(),
                                        nn.BatchNorm1d(32, momentum=0.995),
                                        nn.Conv1d(in_channels=32, out_channels=64,
                                                  stride=2, padding=4, kernel_size=5))
@@ -33,19 +33,20 @@ class XceptionArchitecture1d(nn.Module):
         # Exit flow
         self.exit_flow = nn.Sequential(XceptionModule1d(in_channels=728, out_channels=1024,
                                                         n_modules=2, kernel_size=3, pooling_stride=2),
-                                       nn.ReLU(True),
+                                       Swish(),
                                        nn.BatchNorm1d(1024, momentum=0.995),
                                        DepthwiseSeparableConv1d(in_channels=1024, out_channels=1536, kernel_size=3,
                                                                 stride=2),
-                                       nn.ReLU(True),
+                                       Swish(),
                                        nn.BatchNorm1d(1536, momentum=0.995),
                                        DepthwiseSeparableConv1d(in_channels=1536, out_channels=2048, kernel_size=3,
                                                                 stride=2))
 
         # FC flow
         self.fc_flow = nn.Sequential(Flatten(),
-                                     nn.ReLU(True),
+                                     Swish(),
                                      nn.BatchNorm1d(2048 * 32, momentum=0.995),
+                                     nn.Dropout(p=0.5, inplace=True),
                                      nn.Linear(2048*32, n_classes))
 
         self.optimizer = torch.optim.Adam(params=self.parameters(), lr=lr)

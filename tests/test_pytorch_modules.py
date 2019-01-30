@@ -1,8 +1,10 @@
 from unittest import TestCase
+
+import numpy as np
 import torch
 
 from src.pytorch_modules import DepthwiseSeparableConv2d, DepthwiseSeparableConv1d, TransferenceFunctionModule, \
-    XceptionModule1d, Flatten
+    XceptionModule1d, Flatten, Swish
 
 
 class TestDepthwiseSeparableConv2d(TestCase):
@@ -222,3 +224,11 @@ class TestFlatten(TestCase):
         self.assertTrue(self, (self.flatten.forward(self.input1d).sum(dim=1) == self.input1d.sum(dim=1)).all())
         self.assertTrue(self, (self.flatten.forward(self.input2d).sum(dim=1) == self.input2d.sum(dim=(1, 2))).all())
         self.assertTrue(self, (self.flatten.forward(self.input3d).sum(dim=1) == self.input3d.sum(dim=(1, 2, 3))).all())
+
+
+class TestOtherFunctions(TestCase):
+    def test_swish_activation(self):
+        for i in range(10):
+            r = torch.rand(1)
+            a = Swish()(r)
+            self.assertAlmostEqual(a.numpy(), r.numpy() / (1 + np.exp(-r.numpy())), delta=0.001)

@@ -112,12 +112,14 @@ class DataFeeder:
                               "silence"]
         self.scoring = scoring
         self.shuffle = shuffle
-        self.target_encoder = dict(zip(self.known_classes, range(len(self.known_classes))))
-        self.target_decoder = {v: k for k, v in self.target_encoder.items()}
+        if not scoring:
+            self.target_encoder = dict(zip(self.known_classes, range(len(self.known_classes))))
+            self.target_decoder = {v: k for k, v in self.target_encoder.items()}
         self.file_paths = file_paths
+        self.corrupted_file_paths = []
         self.set_batch_size(batch_size)
         self.noise_clips = load_real_noise_clips()
-        self.load_data(file_paths, add_noise=add_noise, load_targets=not (scoring))
+        self.load_data(file_paths, add_noise=add_noise, load_targets=not scoring)
         if shuffle:
             self.shuffle_data()
         self.prepare_data()
@@ -126,10 +128,11 @@ class DataFeeder:
         assert self.audios.min() >= -1
         
     def prepare_data(self):
-        self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
-        self.targets = list(map(self.target_encoder.get, self.targets))
         self.audios = np.array(self.audios)
-        self.targets = np.array(self.targets)
+        if not self.scoring:
+            self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
+            self.targets = list(map(self.target_encoder.get, self.targets))
+            self.targets = np.array(self.targets)
 
     def shuffle_data(self):
         joined_list = list(zip(self.audios, self.targets))
@@ -146,10 +149,12 @@ class DataFeeder:
                 try:
                     _, wav = read_wavfile(file_path)
                     wav = preprocess_wav(wav, distort=False)
-                    target = os.path.split(os.path.split(file_path)[0])[1]
                     self.audios.append(wav)
-                    if load_targets: self.targets.append(target)
+                    if load_targets:
+                        target = os.path.split(os.path.split(file_path)[0])[1]
+                        self.targets.append(target)
                 except:
+                    self.corrupted_file_paths.append(file_path)
                     print(f"Error reading {file_path}")
             else:
                 print(f"Fatal error, file {file_path} not found")
@@ -173,12 +178,15 @@ class DataFeeder:
 
     def get_batches(self, return_incomplete_batches=False):
         list_of_iterables = [self.audios, self.targets] if not self.scoring else [self.audios]
-        for batch in batching(list_of_iterables=[self.audios, self.targets],
+        for batch in batching(list_of_iterables=list_of_iterables,
                               n=self.batch_size,
                               return_incomplete_batches=return_incomplete_batches):
             batch[0] = np.expand_dims(np.array(batch[0]), 1)
             batch[0] = torch.from_numpy(batch[0])
-            if not self.scoring: batch[1] = torch.from_numpy(batch[1])
+            if self.scoring:
+                batch += [None]
+            else:
+                batch[1] = torch.from_numpy(batch[1])
             yield batch
 
     def set_batch_size(self, batch_size):

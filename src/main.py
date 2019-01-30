@@ -39,7 +39,7 @@ data_feeder_test = DataFeeder(test_paths, batch_size=batch_size, add_noise=True)
 data_feeder_scoring = DataFeeder(scoring_paths, batch_size=batch_size, add_noise=False, shuffle=False, scoring=True)
 
 # Load architecture
-model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_classes), lr=2.5e-4)
+model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_classes), lr=1e-4)
 if run_in_gpu: model.cuda()
 # Instantiate summary writer for tensorboard
 sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), version_name))
@@ -68,10 +68,9 @@ def model_predict(model, data_feeder, run_in_gpu):
     assert not data_feeder.shuffle
     model.eval()
     preds = []
-    for n, (batch_audio, batch_target) in enumerate(data_feeder.get_batches(return_incomplete_batches=True)):
+    for n, (batch_audio, _) in enumerate(data_feeder.get_batches(return_incomplete_batches=True)):
         if run_in_gpu:
             batch_audio = batch_audio.cuda()
-            batch_target = batch_target.cuda()
         y_hat = model.forward(batch_audio).cpu().detach().numpy()
         preds += [y_hat]
     model.train()
