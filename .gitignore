@@ -9,3 +9,5 @@ data/test/*/*
 coverage.xml
 settings.json
 models
+*.txt
+notebooks
