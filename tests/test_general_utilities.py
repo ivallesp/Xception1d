@@ -1,6 +1,7 @@
+import os
 from unittest import TestCase
 
-from src.general_utilities import flatten, batching
+from src.general_utilities import flatten, batching, recursive_listdir
 
 
 class TestGeneralUtilities(TestCase):
@@ -54,3 +55,12 @@ class TestGeneralUtilities(TestCase):
         self.assertListEqual(dataset_1[:-1], flatten(batches_1))
         self.assertListEqual(dataset_2[:-1], flatten(batches_2))
         self.assertListEqual(dataset_3[:-1], flatten(batches_3))
+
+    def test_recursive_listdir(self):
+        sample_path = os.path.join("tests", "examples", "sample_path")
+        filepaths = list(recursive_listdir(sample_path))
+        self.assertEqual(4, len(filepaths))
+        self.assertIn(os.path.join(sample_path, "touch_4"), filepaths)
+        self.assertIn(os.path.join(sample_path, "folder_1", "touch_1"), filepaths)
+        self.assertIn(os.path.join(sample_path, "folder_1", "folder_2", "touch_2"), filepaths)
+        self.assertIn(os.path.join(sample_path, "folder_3", "touch_3"), filepaths)
