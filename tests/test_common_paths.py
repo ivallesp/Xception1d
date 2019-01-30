@@ -3,7 +3,7 @@ import shutil
 from unittest import TestCase
 
 from src.common_paths import get_data_path, get_models_path, get_model_path, get_outputs_path, \
-    get_output_path, get_training_data_path
+    get_output_path, get_training_data_path, get_test_data_path
 
 
 class TestDataTools(TestCase):
@@ -39,3 +39,6 @@ class TestDataTools(TestCase):
         path = get_training_data_path()
         self.assertTrue(os.path.exists(path))
 
+    def test_get_test_data_path(self):
+        path = get_test_data_path()
+        self.assertTrue(os.path.exists(path))
