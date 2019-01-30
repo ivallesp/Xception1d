@@ -21,7 +21,7 @@ def normalize_wavfile(wav, mode=2, normalize_to_peak=False):
     if normalize_to_peak:
         peak = np.max(np.abs(wav))
         if peak == 0:
-            raise ValueError("wavfile is constant zero, impossible to normalize!")
+            return wav
         elif np.isnan(wav).any():
             raise ValueError("wavfile contains nan values, corrupted!")
         else:

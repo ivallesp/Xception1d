@@ -7,10 +7,11 @@ import torch
 from scipy.io import wavfile
 from tqdm import tqdm
 
-from src.common_paths import get_training_data_path
+from src.common_paths import get_training_data_path, get_test_data_path
 from src.data_tools import read_wavfile, draw_random_subclip, randomly_distort_wavfile, fix_wavfile_length, \
     normalize_wavfile
 from src.general_utilities import batching
+from src.general_utilities import recursive_listdir
 
 
 def get_list_of_wav_paths(include_augmentations=False):
@@ -23,18 +24,13 @@ def get_list_of_wav_paths(include_augmentations=False):
                         list_val))
     list_train = list()
     for folder in folders:
-        base_path = os.path.join(get_training_data_path(), folder)
-        for dirName, subdirList, fileList in os.walk(base_path):
-            for fname in fileList:
-                if fname.endswith("wav"):
-                    filepath = os.path.join(base_path, os.path.split(dirName)[-1], fname)
-                    list_train.append(os.path.normpath(filepath.replace(os.sep, "/")).strip())
-    list_train = np.setdiff1d(list_train, list_test)
-    list_train = np.setdiff1d(list_train, list_val)
-    list_train = list_train.tolist()
-    list_train = list(filter(lambda x: "background_noise" not in x, list_train))
-
-    return list_train, list_val, list_test
+        base_path = os.path.normpath(os.path.join(get_training_data_path(), folder))
+        list_train += list(recursive_listdir(base_path))
+    list_train = list(filter(lambda p: "background_noise" not in p and p.endswith("wav"), list_train))
+    list_train = np.setdiff1d(list_train, list_test + list_val).tolist()
+    list_scoring = list(recursive_listdir(os.path.normpath(get_test_data_path())))
+    list_scoring = list(filter(lambda p: p.endswith("wav"), list_scoring))
+    return list_train, list_val, list_test, list_scoring
 
 
 def generate_white_noise_clip(n_samples):
@@ -111,16 +107,19 @@ def batch_augment_files(list_of_files, n_times, n_jobs, folder_name="augmented")
 
 
 class DataFeeder:
-    def __init__(self, file_paths, batch_size, add_noise=False):
+    def __init__(self, file_paths, batch_size, add_noise=False, shuffle=True, scoring=False):
         self.known_classes = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown",
                               "silence"]
+        self.scoring = scoring
+        self.shuffle = shuffle
         self.target_encoder = dict(zip(self.known_classes, range(len(self.known_classes))))
         self.target_decoder = {v: k for k, v in self.target_encoder.items()}
         self.file_paths = file_paths
         self.set_batch_size(batch_size)
         self.noise_clips = load_real_noise_clips()
-        self.load_data(file_paths, add_noise=add_noise)
-        self.shuffle_data()
+        self.load_data(file_paths, add_noise=add_noise, load_targets=not (scoring))
+        if shuffle:
+            self.shuffle_data()
         self.prepare_data()
         assert not np.isnan(self.audios).any()
         assert self.audios.max() <= 1
@@ -137,9 +136,10 @@ class DataFeeder:
         random.shuffle(joined_list)
         self.audios, self.targets = list(zip(*joined_list))  # Shuffle!
 
-    def load_data(self, file_paths, add_noise):
+    def load_data(self, file_paths, add_noise, load_targets=True):
         self.audios = []
-        self.targets = []
+        if load_targets:
+            self.targets = []
         # Load data
         for file_path in tqdm(file_paths):
             if os.path.exists(file_path):
@@ -148,7 +148,7 @@ class DataFeeder:
                     wav = preprocess_wav(wav, distort=False)
                     target = os.path.split(os.path.split(file_path)[0])[1]
                     self.audios.append(wav)
-                    self.targets.append(target)
+                    if load_targets: self.targets.append(target)
                 except:
                     print(f"Error reading {file_path}")
             else:
@@ -156,24 +156,29 @@ class DataFeeder:
         if add_noise:
             n_artificial_noise_samples = int(0.05 * len(self.audios))
             n_real_noise_samples = int(0.15 * len(self.audios))
+            n_empty_samples = int(0.0025 * len(self.audios))
             for i in tqdm(range(n_real_noise_samples)):
                 wav = get_random_real_noise_subclip(n_samples=16000, noise_clips=self.noise_clips)
                 wav = preprocess_wav(wav, distort=False)
                 self.audios.append(wav)
-                self.targets.append("silence")
+                if load_targets: self.targets.append("silence")
             for i in range(n_artificial_noise_samples):
                 wav = generate_white_noise_clip(16000)
                 wav = preprocess_wav(wav, distort=False)
                 self.audios.append(wav)
-                self.targets.append("silence")
+                if load_targets: self.targets.append("silence")
+            for i in range(n_empty_samples):
+                self.audios.append(np.zeros_like(wav).astype(np.float32))
+                if load_targets: self.targets.append("silence")
 
     def get_batches(self, return_incomplete_batches=False):
+        list_of_iterables = [self.audios, self.targets] if not self.scoring else [self.audios]
         for batch in batching(list_of_iterables=[self.audios, self.targets],
                               n=self.batch_size,
                               return_incomplete_batches=return_incomplete_batches):
             batch[0] = np.expand_dims(np.array(batch[0]), 1)
             batch[0] = torch.from_numpy(batch[0])
-            batch[1] = torch.from_numpy(batch[1])
+            if not self.scoring: batch[1] = torch.from_numpy(batch[1])
             yield batch
 
     def set_batch_size(self, batch_size):

@@ -42,8 +42,8 @@ class TestDataTools(TestCase):
         for wav_processed in wavs_peak_processed:
             self.assertGreaterEqual(1, wav_processed.max())
             self.assertLessEqual(-1, wav_processed.max())
-        with self.assertRaises(ValueError):
-            normalize_wavfile(np.zeros(16000), normalize_to_peak=True) 
+        wav_processed = normalize_wavfile(np.zeros(16000), normalize_to_peak=True)
+        self.assertEqual(0, np.abs(wav_processed).sum())
         with self.assertRaises(ValueError):
             wav_corrupted = np.random.rand(16000)
             wav_corrupted[4000] = np.nan

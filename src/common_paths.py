@@ -72,6 +72,11 @@ def get_training_data_path():
 
 
 @_is_output_path
+def get_test_data_path():
+    path = "./data/test"
+    return path
+
+@_is_output_path
 def get_tensorboard_logs_path():
     # path = "/home/mck/.logs_tensorboard/"
     path = json.load(open("settings.json"))["paths"]["tensorboard_logs"]
