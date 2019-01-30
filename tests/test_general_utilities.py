@@ -1,4 +1,3 @@
-import os
 from unittest import TestCase
 
 from src.general_utilities import flatten, batching, recursive_listdir
