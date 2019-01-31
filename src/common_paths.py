@@ -59,19 +59,19 @@ def _is_input_path(path):
     return check_existence
 
 
-@_is_output_path
+@_is_input_path
 def get_data_path():
     path = "./data/"
     return path
 
 
-@_is_output_path
+@_is_input_path
 def get_training_data_path():
     path = "./data/train"
     return path
 
 
-@_is_output_path
+@_is_input_path
 def get_test_data_path():
     path = "./data/test"
     return path

@@ -1,0 +1,7 @@
+codecov:
+  range: 80..100
+  round: down
+  precision: 2
+ignore:
+  - src/main.py
+  - tests/*
