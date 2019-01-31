@@ -77,6 +77,10 @@ def model_predict(model, data_feeder, run_in_gpu):
     return np.concatenate(preds)
 
 
+def generate_submission_table(wav_names, label):
+
+
+
 for epoch in range(n_epochs):
     # Evaluate model
     loss_val, accuracy_val = evaluate_model(model=model, data_feeder=data_feeder_validation, run_in_gpu=run_in_gpu)

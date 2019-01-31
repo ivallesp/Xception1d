@@ -1,20 +1,23 @@
-# Speech Commands Data Set v0.01
+# Speech Commands Data Set v0.02
 
 This is a set of one-second .wav audio files, each containing a single spoken
 English word. These words are from a small set of commands, and are spoken by a
 variety of different speakers. The audio files are organized into folders based
 on the word they contain, and this data set is designed to help train simple
-machine learning models.
+machine learning models. This dataset is covered in more detail at [https://arxiv.org/abs/1804.03209](https://arxiv.org/abs/1804.03209).
 
 It's licensed under the [Creative Commons BY 4.0
-license](https://github.com/petewarden/extract_loudest_section). See the LICENSE
+license](https://creativecommons.org/licenses/by/4.0/). See the LICENSE
 file in this folder for full details. Its original location was at
-[http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz](http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz).
+[http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz](http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz).
 
 ## History
 
-This is version 0.01 of the data set containing 64,727 audio files, released on
-August 3rd 2017.
+Version 0.01 of the data set was released on August 3rd 2017 and contained
+64,727 audio files.
+
+This is version 0.02 of the data set containing 105,829 audio files, released on
+April 11th 2018.
 
 ## Collection
 
@@ -138,15 +141,20 @@ noise. For more details, see the `_background_noise_/README.md`.
 
 If you use the Speech Commands dataset in your work, please cite it as:
 
-APA-style citation: "Warden P. Speech Commands: A public dataset for single-word
-speech recognition, 2017. Available from
-http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz".
-
-BibTeX `@article{speechcommands, title={Speech Commands: A public dataset for
-single-word speech recognition.}, author={Warden, Pete}, journal={Dataset
-available from
-http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz}, year={2017}
-}`
+```
+@article{speechcommandsv2,
+   author = {{Warden}, P.},
+    title = "{Speech Commands: A Dataset for Limited-Vocabulary Speech Recognition}",
+  journal = {ArXiv e-prints},
+archivePrefix = "arXiv",
+   eprint = {1804.03209},
+ primaryClass = "cs.CL",
+ keywords = {Computer Science - Computation and Language, Computer Science - Human-Computer Interaction},
+     year = 2018,
+    month = apr,
+    url = {https://arxiv.org/abs/1804.03209},
+}
+```
 
 ## Credits
 

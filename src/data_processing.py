@@ -1,5 +1,7 @@
 import os
 import random
+import tarfile
+import urllib.request
 from multiprocessing.dummy import Pool
 
 import numpy as np
@@ -7,41 +9,70 @@ import torch
 from scipy.io import wavfile
 from tqdm import tqdm
 
-from src.common_paths import get_training_data_path, get_test_data_path
+from src.common_paths import get_training_data_path, get_dataset_filepath, get_augmented_data_path
 from src.data_tools import read_wavfile, draw_random_subclip, randomly_distort_wavfile, fix_wavfile_length, \
     normalize_wavfile
-from src.general_utilities import batching
-from src.general_utilities import recursive_listdir
+from src.general_utilities import batching, flatten, recursive_listdir
 
+
+def download_dataset():
+    """
+    Download the data and stores the tar.gz file in the specified path
+    """
+    url = "http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz"
+    urllib.request.urlretrieve(url, get_dataset_filepath())
+
+
+def decompress_dataset():
+    """
+    Retrieves the downloaded data and decompresses it
+    """
+    fname = get_dataset_filepath()
+    assert os.path.exists(fname)
+    tar = tarfile.open(fname, "r:gz")
+    tar.extractall(path=get_training_data_path())
+    tar.close()
 
 def get_list_of_wav_paths(include_augmentations=False):
-    folders = ("audio",) if not include_augmentations else ("audio", "augmented")
+    """
+    Retrieves the list of filepaths that belong to train, validation and test
+    :param include_augmentations: if set, the code will look for files in the augmented folder. These files will be add
+    to the training list (bool)
+    :return: list of training paths, list of validation paths and list of test paths (list of lists)
+    """
+    folders = [get_training_data_path()]
+    folders += [get_augmented_data_path()] if include_augmentations else []
+
     list_test = open(os.path.join(get_training_data_path(), "testing_list.txt"))
-    list_test = list(map(lambda x: os.path.normpath(os.path.join(get_training_data_path(), "audio", x.strip())),
-                         list_test))
+    list_test = list(map(lambda x: os.path.normpath(os.path.join(get_training_data_path(), x.strip())), list_test))
+
     list_val = open(os.path.join(get_training_data_path(), "validation_list.txt"))
-    list_val = list(map(lambda x: os.path.normpath(os.path.join(get_training_data_path(), "audio", x.strip())),
-                        list_val))
-    list_train = list()
-    for folder in folders:
-        base_path = os.path.normpath(os.path.join(get_training_data_path(), folder))
-        list_train += list(recursive_listdir(base_path))
+    list_val = list(map(lambda x: os.path.normpath(os.path.join(get_training_data_path(), x.strip())), list_val))
+
+    list_train = flatten([list(recursive_listdir(os.path.normpath(folder))) for folder in folders])
     list_train = list(filter(lambda p: "background_noise" not in p and p.endswith("wav"), list_train))
     list_train = np.setdiff1d(list_train, list_test + list_val).tolist()
-    list_scoring = list(recursive_listdir(os.path.normpath(get_test_data_path())))
-    list_scoring = list(filter(lambda p: p.endswith("wav"), list_scoring))
-    return list_train, list_val, list_test, list_scoring
+    return list_train, list_val, list_test
 
 
 def generate_white_noise_clip(n_samples):
+    """
+    Generates an artificial silence clip using white noise and returns it
+    :param n_samples: number of samples of the desired clip (int)
+    :return: clip (np.array)
+    """
     clip = np.random.randn(n_samples)
     clip /= np.abs(clip).max()
     return clip
 
 
 def load_real_noise_clips():
+    """
+    Loads all the available real noise clips, which are located under the _background_noise_ folder
+    :return: list of real noise clips (list of np.array)
+    """
     clips = []
-    path = os.path.join(get_training_data_path(), "audio", "_background_noise_")
+    path = os.path.join(get_training_data_path(), "_background_noise_")
     for filename in filter(lambda x: x.endswith(".wav"), os.listdir(path)):
         _, wav = read_wavfile(os.path.join(path, filename))
         clips.append(wav)
@@ -50,7 +81,7 @@ def load_real_noise_clips():
 
 def load_random_real_noise_clip():
     clips = []
-    path = os.path.join(get_training_data_path(), "audio", "_background_noise_")
+    path = os.path.join(get_training_data_path(), "_background_noise_")
     filename = random.choice(list(filter(lambda x: x.endswith(".wav"), os.listdir(path))))
     _, clip = read_wavfile(os.path.join(path, filename))
     return clip
@@ -72,10 +103,10 @@ def preprocess_wav(wav, distort=True):
     return wav.astype(np.float32)
 
 
-def generate_augmented_wav(filepath, folder_name="augmented", suffix=""):
+def generate_augmented_wav(filepath, suffix=""):
     try:
         folder_class = os.path.split(os.path.split(filepath)[-2])[-1]
-        output_path = os.path.join(get_training_data_path(), folder_name, folder_class)
+        output_path = os.path.join(get_augmented_data_path(), folder_class)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         sample_rate, wav = read_wavfile(filepath)
@@ -89,20 +120,18 @@ def generate_augmented_wav(filepath, folder_name="augmented", suffix=""):
         print("Error found with file {}".format(filepath))
 
 
-def batch_augment_files(list_of_files, n_times, n_jobs, folder_name="augmented"):
+def batch_augment_files(list_of_files, n_times, n_jobs):
     for i in range(n_times):
         list_of_files = list_of_files[:]
         random.shuffle(list_of_files)
         if n_jobs > 1:
             pool = Pool(n_jobs)
             pool.map(lambda x: generate_augmented_wav(filepath=x,
-                                                      folder_name=folder_name,
                                                       suffix=str(i)), list_of_files)
             pool.close()
             pool.join()
         else:
             list(map(lambda x: generate_augmented_wav(filepath=x,
-                                                      folder_name=folder_name,
                                                       suffix=str(i)), list_of_files))
 
 

@@ -3,7 +3,7 @@ import shutil
 from unittest import TestCase
 
 from src.common_paths import get_data_path, get_models_path, get_model_path, get_outputs_path, \
-    get_output_path, get_training_data_path, get_test_data_path
+    get_output_path, get_training_data_path, get_dataset_filepath, get_augmented_data_path
 
 
 class TestDataTools(TestCase):
@@ -39,6 +39,11 @@ class TestDataTools(TestCase):
         path = get_training_data_path()
         self.assertTrue(os.path.exists(path))
 
-    def test_get_test_data_path(self):
-        path = get_test_data_path()
-        self.assertTrue(os.path.exists(path))
+    def test_get_dataset_filepath(self):
+        path = get_dataset_filepath()
+        self.assertTrue(os.path.exists(os.path.split(path)[0]))
+        self.assertTrue(path.endswith(".tar.gz"))
+
+    def test_get_augmented_data_path(self):
+        aug_path = get_augmented_data_path()
+        self.assertTrue(os.path.exists(aug_path))

@@ -71,9 +71,9 @@ def get_training_data_path():
     return path
 
 
-@_is_input_path
-def get_test_data_path():
-    path = "./data/test"
+@_is_output_path
+def get_augmented_data_path():
+    path = "./data/augmented"
     return path
 
 @_is_output_path
@@ -104,4 +104,9 @@ def get_outputs_path():
 @_is_output_path
 def get_output_path(version_id):
     path = os.path.join(get_outputs_path(), "{0}".format(version_id))
+    return path
+
+
+def get_dataset_filepath():
+    path = os.path.join(get_training_data_path(), "speech_commands.tar.gz")
     return path
