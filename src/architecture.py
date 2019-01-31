@@ -46,7 +46,7 @@ class XceptionArchitecture1d(nn.Module):
         self.fc_flow = nn.Sequential(Flatten(),
                                      Swish(),
                                      nn.BatchNorm1d(2048 * 32, momentum=0.995),
-                                     nn.Dropout(p=0.5, inplace=True),
+                                     nn.Dropout(p=0.75, inplace=True),
                                      nn.Linear(2048*32, n_classes))
 
         self.optimizer = torch.optim.Adam(params=self.parameters(), lr=lr)
