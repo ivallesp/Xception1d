@@ -59,22 +59,23 @@ def _is_input_path(path):
     return check_existence
 
 
-@_is_input_path
+@_is_output_path
 def get_data_path():
     path = "./data/"
     return path
 
 
-@_is_input_path
-def get_training_data_path():
-    path = "./data/train"
+@_is_output_path
+def get_training_data_path(data_version: str):
+    path = os.path.join(get_data_path(), data_version, "train")
     return path
 
 
 @_is_output_path
-def get_augmented_data_path():
-    path = "./data/augmented"
+def get_augmented_data_path(data_version: str):
+    path = os.path.join(get_data_path(), data_version, "augmented")
     return path
+
 
 @_is_output_path
 def get_tensorboard_logs_path():
@@ -90,8 +91,8 @@ def get_models_path():
 
 
 @_is_output_path
-def get_model_path(version_id):
-    path = os.path.join(get_models_path(), "{0}".format(version_id))
+def get_model_path(model_alias: str):
+    path = os.path.join(get_models_path(), "{0}".format(model_alias))
     return path
 
 
@@ -102,11 +103,11 @@ def get_outputs_path():
 
 
 @_is_output_path
-def get_output_path(version_id):
-    path = os.path.join(get_outputs_path(), "{0}".format(version_id))
+def get_output_path(model_alias: str):
+    path = os.path.join(get_outputs_path(), "{0}".format(model_alias))
     return path
 
 
-def get_dataset_filepath():
-    path = os.path.join(get_training_data_path(), "speech_commands.tar.gz")
+def get_dataset_filepath(data_version: str):
+    path = os.path.join(get_training_data_path(data_version), "speech_commands.tar.gz")
     return path

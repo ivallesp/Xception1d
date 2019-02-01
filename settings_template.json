@@ -6,5 +6,6 @@
   "run_in_gpu": "",
   "batch_size": "",
   "n_epochs": "",
-  "version_id": ""
+  "model_alias": "",
+  "data_version": ""
 }
