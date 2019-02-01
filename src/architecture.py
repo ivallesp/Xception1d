@@ -5,7 +5,7 @@ from src.pytorch_modules import XceptionModule1d, Flatten, DepthwiseSeparableCon
 
 
 class XceptionArchitecture1d(nn.Module):
-    def __init__(self, n_classes, lr=2.5e-4):
+    def __init__(self, n_classes, lr=2.5e-4, bn_momentum=0.995):
         # Initialization
         # Remember not to add the activation at the end
         super(XceptionArchitecture1d, self).__init__()
@@ -13,7 +13,7 @@ class XceptionArchitecture1d(nn.Module):
         self.init_flow = nn.Sequential(nn.Conv1d(in_channels=1, out_channels=32,
                                                  stride=4, padding=4, kernel_size=9),
                                        Swish(),
-                                       nn.BatchNorm1d(32, momentum=0.995),
+                                       nn.BatchNorm1d(32, momentum=bn_momentum),
                                        nn.Conv1d(in_channels=32, out_channels=64,
                                                  stride=2, padding=4, kernel_size=5))
 
@@ -34,18 +34,18 @@ class XceptionArchitecture1d(nn.Module):
         self.exit_flow = nn.Sequential(XceptionModule1d(in_channels=728, out_channels=1024,
                                                         n_modules=2, kernel_size=3, pooling_stride=2),
                                        Swish(),
-                                       nn.BatchNorm1d(1024, momentum=0.995),
+                                       nn.BatchNorm1d(1024, momentum=bn_momentum),
                                        DepthwiseSeparableConv1d(in_channels=1024, out_channels=1536, kernel_size=3,
                                                                 stride=2),
                                        Swish(),
-                                       nn.BatchNorm1d(1536, momentum=0.995),
+                                       nn.BatchNorm1d(1536, momentum=bn_momentum),
                                        DepthwiseSeparableConv1d(in_channels=1536, out_channels=2048, kernel_size=3,
                                                                 stride=2))
 
         # FC flow
         self.fc_flow = nn.Sequential(Flatten(),
                                      Swish(),
-                                     nn.BatchNorm1d(2048 * 32, momentum=0.995),
+                                     nn.BatchNorm1d(2048 * 32, momentum=bn_momentum),
                                      nn.Dropout(p=0.75, inplace=True),
                                      nn.Linear(2048*32, n_classes))
 
