@@ -21,7 +21,6 @@ class TestDataProcessing(TestCase):
     def tearDown(self):
         pass
 
-    # @unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
     def test_get_list_of_wav_paths(self):
         train, val, test = get_list_of_wav_paths(data_version=self.data_version)
         whole_list = train + val + test
@@ -43,21 +42,18 @@ class TestDataProcessing(TestCase):
         self.assertEqual(len(val_aug), len(val))
         self.assertEqual(len(test_aug), len(test))
 
-
     def test_generate_white_noise_clip(self):
         clip = generate_white_noise_clip(300)
         self.assertGreater(4, np.abs(clip).max())
         self.assertLess(1, len(np.unique(clip)))
         self.assertEqual(300, len(clip))
 
-    #@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
     def test_load_real_noise_clips(self):
         noise_clips = load_real_noise_clips(data_version=self.data_version)
         self.assertEqual(6, len(noise_clips))
         for noise_clip in noise_clips:
             self.assertLess(1000, len(noise_clip))
 
-    #@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
     def test_get_random_real_noise_subclip(self):
         prev_noise_clip = get_random_real_noise_subclip(data_version=self.data_version, n_samples=333)
         for _ in range(10):
@@ -77,7 +73,6 @@ class TestDataProcessing(TestCase):
             self.assertNotEqual(np.abs(prev_noise_clip).sum(), np.abs(noise_clip).sum())
             prev_noise_clip = noise_clip
 
-    #@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
     def test_load_random_real_noise_clip(self):
         clip = load_random_real_noise_clip(data_version=self.data_version)
         self.assertLess(1000, len(clip))
@@ -107,7 +102,6 @@ class TestDataProcessing(TestCase):
         os.remove(filepath_augmented)
         os.rmdir(os.path.split(filepath_augmented)[0])
 
-    #@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
     def test_batch_augment_files(self):
         list_of_files = [self.wav_filepath]
         batch_augment_files(data_version=self.data_version, list_of_files=list_of_files, n_times=10, n_jobs=1)
@@ -122,11 +116,24 @@ class TestDataProcessing(TestCase):
                 self.assertTrue(os.path.exists(output_filepath))
                 os.remove(output_filepath)
 
-    #@unittest.skipIf("TRAVIS" in os.environ and os.environ["TRAVIS"] == "true", "Skipping this test on Travis CI.")
+    def test_batch_augment_files_multiprocessing(self):
+        list_of_files = [self.wav_filepath]
+        batch_augment_files(data_version=self.data_version, list_of_files=list_of_files, n_times=10, n_jobs=2)
+        for i in range(10):
+            for filepath in list_of_files:
+                path, filename = os.path.split(filepath)
+                _, folder = os.path.split(path)
+                name, extension = os.path.splitext(filename)
+                output_filename = name + "_" + str(i) + extension
+                output_filepath = os.path.join(get_augmented_data_path(data_version=self.data_version), folder,
+                                               output_filename)
+                self.assertTrue(os.path.exists(output_filepath))
+                os.remove(output_filepath)
+
     def test_data_feeder(self):
         train, _, _ = get_list_of_wav_paths(data_version=self.data_version)
-        list_of_files = train[0:20] + ["/test/errors"]
-        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5)
+        list_of_files = train[0:20] + ["/test/errors.wav"]
+        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, add_silence=False)
         self.assertEqual(20, len(df.audios))
         self.assertEqual(20, len(df.targets))
         list_of_batches = list(df.get_batches())
@@ -135,4 +142,18 @@ class TestDataProcessing(TestCase):
         self.assertLessEqual(1, np.max(np.abs(df.audios)))
         self.assertIsNotNone(list_of_batches[0][1])
         self.assertGreaterEqual(11, np.max(df.targets))
+        self.assertIn("/test/errors.wav", df.corrupted_file_paths)
 
+    def test_data_feeder_with_silence(self):
+        train, _, _ = get_list_of_wav_paths(data_version=self.data_version)
+        list_of_files = train[0:60] + ["/test/errors.wav"]
+        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, add_silence=True)
+        self.assertEqual(60 + 12, len(df.audios))
+        self.assertEqual(60 + 12, len(df.targets))
+        list_of_batches = list(df.get_batches())
+        self.assertEqual(14, len(list_of_batches))
+        self.assertEqual(2, len(list_of_batches[0]))
+        self.assertLessEqual(1, np.max(np.abs(df.audios)))
+        self.assertIsNotNone(list_of_batches[0][1])
+        self.assertGreaterEqual(11, np.max(df.targets))
+        self.assertIn("/test/errors.wav", df.corrupted_file_paths)

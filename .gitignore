@@ -1,5 +1,4 @@
-data/train/*/*
-data/test/*/*
+data
 *.7z
 *.zip
 .pytest_cache

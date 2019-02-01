@@ -75,11 +75,11 @@ if __name__ == "__main__":
     train_paths, validation_paths, test_paths = get_list_of_wav_paths(data_version=data_version,
                                                                       include_augmentations=True)
     data_feeder_train = DataFeeder(data_version=data_version, file_paths=train_paths, batch_size=batch_size,
-                                   add_noise=True)
+                                   add_silence=True)
     data_feeder_validation = DataFeeder(data_version=data_version, file_paths=validation_paths, batch_size=batch_size,
-                                        add_noise=True)
+                                        add_silence=True)
     data_feeder_test = DataFeeder(data_version=data_version, file_paths=test_paths, batch_size=batch_size,
-                                  add_noise=True)
+                                  add_silence=True)
 
     # Load architecture
     model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_classes), lr=1e-4)

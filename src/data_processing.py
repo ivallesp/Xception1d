@@ -181,7 +181,7 @@ def batch_augment_files(data_version: str, list_of_files: list, n_times: int, n_
 
 
 class DataFeeder:
-    def __init__(self, data_version: str, file_paths: list, batch_size: int, add_noise: bool = False,
+    def __init__(self, data_version: str, file_paths: list, batch_size: int, add_silence: bool = False,
                  shuffle: bool = True,
                  scoring: bool = False) -> None:
         self.known_classes = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown",
@@ -196,7 +196,7 @@ class DataFeeder:
         self.corrupted_file_paths = []
         self.set_batch_size(batch_size)
         self.noise_clips = load_real_noise_clips(data_version=data_version)
-        self.load_data(file_paths, add_noise=add_noise, load_targets=not scoring)
+        self.load_data(file_paths, add_noise=add_silence, load_targets=not scoring)
         if shuffle:
             self.shuffle_data()
         self.prepare_data()
@@ -234,6 +234,7 @@ class DataFeeder:
                     self.corrupted_file_paths.append(file_path)
                     print(f"Error reading {file_path}")
             else:
+                self.corrupted_file_paths.append(file_path)
                 print(f"Fatal error, file {file_path} not found")
         if add_noise:
             n_artificial_noise_samples = int(0.05 * len(self.audios))
