@@ -33,7 +33,8 @@ def decompress_dataset():
     tar.extractall(path=get_training_data_path())
     tar.close()
 
-def get_list_of_wav_paths(include_augmentations=False):
+
+def get_list_of_wav_paths(include_augmentations: bool = False) -> tuple:
     """
     Retrieves the list of filepaths that belong to train, validation and test
     :param include_augmentations: if set, the code will look for files in the augmented folder. These files will be add
@@ -55,7 +56,7 @@ def get_list_of_wav_paths(include_augmentations=False):
     return list_train, list_val, list_test
 
 
-def generate_white_noise_clip(n_samples):
+def generate_white_noise_clip(n_samples: int) -> np.array:
     """
     Generates an artificial silence clip using white noise and returns it
     :param n_samples: number of samples of the desired clip (int)
@@ -66,7 +67,7 @@ def generate_white_noise_clip(n_samples):
     return clip
 
 
-def load_real_noise_clips():
+def load_real_noise_clips() -> np.array:
     """
     Loads all the available real noise clips, which are located under the _background_noise_ folder
     :return: list of real noise clips (list of np.array)
@@ -79,15 +80,25 @@ def load_real_noise_clips():
     return clips
 
 
-def load_random_real_noise_clip():
-    clips = []
+def load_random_real_noise_clip() -> np.array:
+    """
+    Loads a random noise clip from the _background_noise_ folder and returns it
+    :return: real noise clip (np.array)
+    """
     path = os.path.join(get_training_data_path(), "_background_noise_")
     filename = random.choice(list(filter(lambda x: x.endswith(".wav"), os.listdir(path))))
     _, clip = read_wavfile(os.path.join(path, filename))
     return clip
 
 
-def get_random_real_noise_subclip(n_samples, noise_clips=None):
+def get_random_real_noise_subclip(n_samples: int, noise_clips: list = None) -> np.array:
+    """
+    Loads a random noise clip and cuts it to the desired size
+    :param n_samples: number of samples in the desired clip (int)
+    :param noise_clips: list of pre-loaded noise clips. If passed, the function selects one randomly instead of loading
+    it from scratch (list of np.array)
+    :return: a clip of the desired size (np.array)
+    """
     if noise_clips is None:
         noise_clip = load_random_real_noise_clip()
     else:
@@ -95,7 +106,14 @@ def get_random_real_noise_subclip(n_samples, noise_clips=None):
     return draw_random_subclip(noise_clip, n_samples)
 
 
-def preprocess_wav(wav, distort=True):
+def preprocess_wav(wav: np.array, distort: bool = True) -> np.array:
+    """
+    Gets a wav clip and (optionally) distorts it randomly, fixes the length of the clip, normalizes it and casts it
+    to type np.float32
+    :param wav: audio clip (np.array)
+    :param distort: indicates if the clip must be distorted (bool)
+    :return: the preprocessed clip (np.array)
+    """
     if distort:
         wav = randomly_distort_wavfile(wav, sr=16000)
     wav = fix_wavfile_length(wav, 16000)
@@ -103,14 +121,21 @@ def preprocess_wav(wav, distort=True):
     return wav.astype(np.float32)
 
 
-def generate_augmented_wav(filepath, suffix=""):
+def generate_augmented_wav(filepath: str, suffix: str = "") -> None:
+    """
+    Given a filepath of a wav file, loads it, preprocesses it and stores it in the default folder for augmentations.
+    :param filepath:  file path of an existing wav file (str)
+    :param suffix: piece of text to be appended before the extension in the output filepath. It is not needed to add
+     a separator at the begining, "_" is added by default(str)
+    :return: None (void)
+    """
     try:
         folder_class = os.path.split(os.path.split(filepath)[-2])[-1]
         output_path = os.path.join(get_augmented_data_path(), folder_class)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         sample_rate, wav = read_wavfile(filepath)
-        wav = preprocess_wav(wav)
+        wav = preprocess_wav(wav, distort=True)
         # Add suffix
         filename = os.path.split(filepath)[-1]
         filename = os.path.splitext(filename)[0] + "_" + suffix + os.path.splitext(filename)[1]
@@ -120,7 +145,7 @@ def generate_augmented_wav(filepath, suffix=""):
         print("Error found with file {}".format(filepath))
 
 
-def batch_augment_files(list_of_files, n_times, n_jobs):
+def batch_augment_files(list_of_files: list, n_times: int, n_jobs: int = 1) -> None:
     for i in range(n_times):
         list_of_files = list_of_files[:]
         random.shuffle(list_of_files)
@@ -136,7 +161,8 @@ def batch_augment_files(list_of_files, n_times, n_jobs):
 
 
 class DataFeeder:
-    def __init__(self, file_paths, batch_size, add_noise=False, shuffle=True, scoring=False):
+    def __init__(self, file_paths: str, batch_size: int, add_noise: bool = False, shuffle: bool = True,
+                 scoring: bool = False) -> None:
         self.known_classes = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown",
                               "silence"]
         self.scoring = scoring
@@ -155,20 +181,20 @@ class DataFeeder:
         assert not np.isnan(self.audios).any()
         assert self.audios.max() <= 1
         assert self.audios.min() >= -1
-        
-    def prepare_data(self):
+
+    def prepare_data(self) -> None:
         self.audios = np.array(self.audios)
         if not self.scoring:
             self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
             self.targets = list(map(self.target_encoder.get, self.targets))
             self.targets = np.array(self.targets)
 
-    def shuffle_data(self):
+    def shuffle_data(self) -> None:
         joined_list = list(zip(self.audios, self.targets))
         random.shuffle(joined_list)
         self.audios, self.targets = list(zip(*joined_list))  # Shuffle!
 
-    def load_data(self, file_paths, add_noise, load_targets=True):
+    def load_data(self, file_paths: list, add_noise: bool, load_targets: bool = True) -> None:
         self.audios = []
         if load_targets:
             self.targets = []
@@ -205,7 +231,7 @@ class DataFeeder:
                 self.audios.append(np.zeros_like(wav).astype(np.float32))
                 if load_targets: self.targets.append("silence")
 
-    def get_batches(self, return_incomplete_batches=False):
+    def get_batches(self, return_incomplete_batches: bool = False):
         list_of_iterables = [self.audios, self.targets] if not self.scoring else [self.audios]
         for batch in batching(list_of_iterables=list_of_iterables,
                               n=self.batch_size,
@@ -218,5 +244,5 @@ class DataFeeder:
                 batch[1] = torch.from_numpy(batch[1])
             yield batch
 
-    def set_batch_size(self, batch_size):
+    def set_batch_size(self, batch_size) -> None:
         self.batch_size = batch_size
