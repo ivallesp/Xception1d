@@ -1,12 +1,5 @@
 {
   "paths": {
     "tensorboard_logs": ""
-  },
-  "n_augmentations": "",
-  "run_in_gpu": "",
-  "batch_size": "",
-  "n_epochs": "",
-  "model_alias": "",
-  "data_version": "",
-  "task": ""
+  }
 }

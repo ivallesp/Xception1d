@@ -2,6 +2,9 @@ import json
 import multiprocessing
 import os
 import random
+import sys
+
+os.chdir(os.path.dirname(sys.argv[0]))
 
 import numpy as np
 import torch
@@ -45,19 +48,22 @@ def model_predict(model, data_feeder, run_in_gpu):
 
 
 if __name__ == "__main__":
+    experiment_settings_filepath = sys.argv[1]  # Retrieve the path of the model_settings.json file
     # Parameters configuration
-    task = json.load(open("settings.json"))["task"]
-    data_version = json.load(open("settings.json"))["data_version"]
-    model_alias = json.load(open("settings.json"))["model_alias"]
+    task = json.load(open(experiment_settings_filepath))["task"]
+    data_version = json.load(open(experiment_settings_filepath))["data_version"]
+    model_alias = json.load(open(experiment_settings_filepath))["model_alias"]
+    alias = f"{task}_m-{model_alias}_d-{data_version}"
     assert task in available_tasks
     known_commands = commands[task]
     include_unknown = unknown_class_addition[task]
 
     n_jobs = multiprocessing.cpu_count()
-    n_epochs = json.load(open("settings.json"))["n_epochs"]
-    batch_size = json.load(open("settings.json"))["batch_size"]
-    run_in_gpu = json.load(open("settings.json"))["run_in_gpu"]
-    n_augmentations = json.load(open("settings.json"))["n_augmentations"]
+    n_epochs = json.load(open(experiment_settings_filepath))["n_epochs"]
+    batch_size = json.load(open(experiment_settings_filepath))["batch_size"]
+    run_in_gpu = json.load(open(experiment_settings_filepath))["run_in_gpu"]
+    n_augmentations = json.load(open(experiment_settings_filepath))["n_augmentations"]
+
 
     # Download and decompress the data if necessary
     if not os.path.exists(get_dataset_filepath(data_version)):
@@ -95,7 +101,7 @@ if __name__ == "__main__":
     if run_in_gpu: model.cuda()
 
     # Instantiate summary writer for tensorboard
-    sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), model_alias))
+    sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), alias))
     best_score = 0
     c = 0
 
@@ -107,7 +113,7 @@ if __name__ == "__main__":
 
         # Save model
         if accuracy_val > best_score:
-            torch.save(model.state_dict(), os.path.join(get_model_path(model_alias=model_alias), f'checkpoint.pth'))
+            torch.save(model.state_dict(), os.path.join(get_model_path(model_alias=alias), f'checkpoint.pth'))
             best_score = accuracy_val
 
         # Train model
