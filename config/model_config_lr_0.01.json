@@ -3,6 +3,7 @@
   "run_in_gpu": true,
   "batch_size": 32,
   "n_epochs": 10000,
+  "bn_momentum": 0.9,
   "model_alias": "0.4",
   "data_version": "0.01",
   "task": "left-right"
