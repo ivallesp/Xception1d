@@ -4,8 +4,6 @@ import os
 import random
 import sys
 
-os.chdir(os.path.dirname(sys.argv[0]))
-
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
