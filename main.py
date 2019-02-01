@@ -61,6 +61,7 @@ if __name__ == "__main__":
     batch_size = json.load(open(experiment_settings_filepath))["batch_size"]
     run_in_gpu = json.load(open(experiment_settings_filepath))["run_in_gpu"]
     n_augmentations = json.load(open(experiment_settings_filepath))["n_augmentations"]
+    bn_momentum = json.load(open(experiment_settings_filepath))["bn_momentum"]
 
 
     # Download and decompress the data if necessary
@@ -95,7 +96,7 @@ if __name__ == "__main__":
                                   include_silence=True, include_unknown=include_unknown, known_commands=known_commands)
 
     # Load architecture
-    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4)
+    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4, bn_momentum=bn_momentum)
     if run_in_gpu: model.cuda()
 
     # Instantiate summary writer for tensorboard
