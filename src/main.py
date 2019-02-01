@@ -9,6 +9,7 @@ from tensorboardX import SummaryWriter
 
 from src.architecture import XceptionArchitecture1d
 from src.common_paths import get_tensorboard_logs_path, get_model_path, get_dataset_filepath
+from src.constants import available_tasks, commands, unknown_class_addition
 from src.data_processing import get_list_of_wav_paths, batch_augment_files, DataFeeder, download_dataset, \
     decompress_dataset
 
@@ -44,12 +45,18 @@ def model_predict(model, data_feeder, run_in_gpu):
 
 
 if __name__ == "__main__":
+    # Parameters configuration
+    task = json.load(open("settings.json"))["task"]
     data_version = json.load(open("settings.json"))["data_version"]
+    model_alias = json.load(open("settings.json"))["model_alias"]
+    assert task in available_tasks
+    known_commands = commands[task]
+    include_unknown = unknown_class_addition[task]
+
     n_jobs = multiprocessing.cpu_count()
     n_epochs = json.load(open("settings.json"))["n_epochs"]
     batch_size = json.load(open("settings.json"))["batch_size"]
     run_in_gpu = json.load(open("settings.json"))["run_in_gpu"]
-    model_alias = json.load(open("settings.json"))["model_alias"]
     n_augmentations = json.load(open("settings.json"))["n_augmentations"]
 
     # Download and decompress the data if necessary
@@ -75,14 +82,16 @@ if __name__ == "__main__":
     train_paths, validation_paths, test_paths = get_list_of_wav_paths(data_version=data_version,
                                                                       include_augmentations=True)
     data_feeder_train = DataFeeder(data_version=data_version, file_paths=train_paths, batch_size=batch_size,
-                                   add_silence=True)
+                                   include_silence=False, include_unknown=include_unknown,
+                                   known_commands=known_commands)
     data_feeder_validation = DataFeeder(data_version=data_version, file_paths=validation_paths, batch_size=batch_size,
-                                        add_silence=True)
+                                        include_silence=True, include_unknown=include_unknown,
+                                        known_commands=known_commands)
     data_feeder_test = DataFeeder(data_version=data_version, file_paths=test_paths, batch_size=batch_size,
-                                  add_silence=True)
+                                  include_silence=True, include_unknown=include_unknown, known_commands=known_commands)
 
     # Load architecture
-    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_classes), lr=1e-4)
+    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4)
     if run_in_gpu: model.cuda()
 
     # Instantiate summary writer for tensorboard

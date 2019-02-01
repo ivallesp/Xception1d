@@ -181,22 +181,35 @@ def batch_augment_files(data_version: str, list_of_files: list, n_times: int, n_
 
 
 class DataFeeder:
-    def __init__(self, data_version: str, file_paths: list, batch_size: int, add_silence: bool = False,
+    def __init__(self, data_version: str,
+                 file_paths: list,
+                 batch_size: int,
+                 known_commands: list,
+                 include_silence: bool = False,
+                 include_unknown: bool = False,
                  shuffle: bool = True,
                  scoring: bool = False) -> None:
-        self.known_classes = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown",
-                              "silence"]
+        self.known_commands = known_commands
+        self.include_unknown = include_unknown
+        self.include_silence = include_silence
+        if self.include_unknown:
+            self.known_commands += ["unknown"]
+        else:
+            if not scoring:
+                # Filter unknown
+                file_paths = [f for f in file_paths if os.path.split(os.path.split(f)[0])[1] in self.known_commands]
+        if self.include_silence: self.known_commands += ["silence"]
         self.scoring = scoring
         self.shuffle = shuffle
         self.data_version = data_version
-        if not scoring:
-            self.target_encoder = dict(zip(self.known_classes, range(len(self.known_classes))))
-            self.target_decoder = {v: k for k, v in self.target_encoder.items()}
         self.file_paths = file_paths
+        if not scoring:
+            self.target_encoder = dict(zip(self.known_commands, range(len(self.known_commands))))
+            self.target_decoder = {v: k for k, v in self.target_encoder.items()}
         self.corrupted_file_paths = []
         self.set_batch_size(batch_size)
         self.noise_clips = load_real_noise_clips(data_version=data_version)
-        self.load_data(file_paths, add_noise=add_silence, load_targets=not scoring)
+        self.load_data(self.file_paths, add_noise=include_silence, load_targets=not scoring)
         if shuffle:
             self.shuffle_data()
         self.prepare_data()
@@ -205,11 +218,12 @@ class DataFeeder:
         assert self.audios.min() >= -1
 
     def prepare_data(self) -> None:
-        self.audios = np.array(self.audios)
         if not self.scoring:
-            self.targets = [target if target in self.known_classes else "unknown" for target in self.targets]
+            self.targets = [target if target in self.known_commands else "unknown" for target in self.targets]
             self.targets = list(map(self.target_encoder.get, self.targets))
             self.targets = np.array(self.targets)
+        self.audios = np.array(self.audios)
+
 
     def shuffle_data(self) -> None:
         joined_list = list(zip(self.audios, self.targets))

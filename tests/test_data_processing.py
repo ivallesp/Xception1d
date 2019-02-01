@@ -17,6 +17,11 @@ class TestDataProcessing(TestCase):
         if not os.path.exists(get_dataset_filepath(data_version=self.data_version)):
             download_dataset(data_version=self.data_version)
             decompress_dataset(data_version=self.data_version)
+        self.known_commands = ["zero", "one", "two", "three", "four", "five", "six",
+                               "seven", "eight", "nine", "marvin", "sheila", "forward",
+                               "backward", "bed", "bird", "cat", "dog", "down", "follow",
+                               "go", "happy", "house", "learn", "no", "yes", "off",
+                               "on", "right", "left", "stop", "tree", "up", "visual", "wow"]
 
     def tearDown(self):
         pass
@@ -133,7 +138,8 @@ class TestDataProcessing(TestCase):
     def test_data_feeder(self):
         train, _, _ = get_list_of_wav_paths(data_version=self.data_version)
         list_of_files = train[0:20] + ["/test/errors.wav"]
-        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, add_silence=False)
+        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, include_silence=False,
+                        known_commands=self.known_commands, include_unknown=True)
         self.assertEqual(20, len(df.audios))
         self.assertEqual(20, len(df.targets))
         list_of_batches = list(df.get_batches())
@@ -141,13 +147,14 @@ class TestDataProcessing(TestCase):
         self.assertEqual(2, len(list_of_batches[0]))
         self.assertLessEqual(1, np.max(np.abs(df.audios)))
         self.assertIsNotNone(list_of_batches[0][1])
-        self.assertGreaterEqual(11, np.max(df.targets))
+        self.assertGreaterEqual(35, np.max(df.targets))
         self.assertIn("/test/errors.wav", df.corrupted_file_paths)
 
     def test_data_feeder_with_silence(self):
         train, _, _ = get_list_of_wav_paths(data_version=self.data_version)
         list_of_files = train[0:60] + ["/test/errors.wav"]
-        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, add_silence=True)
+        df = DataFeeder(data_version=self.data_version, file_paths=list_of_files, batch_size=5, include_silence=True,
+                        known_commands=self.known_commands + ["test"], include_unknown=False)
         self.assertEqual(60 + 12, len(df.audios))
         self.assertEqual(60 + 12, len(df.targets))
         list_of_batches = list(df.get_batches())
@@ -155,5 +162,41 @@ class TestDataProcessing(TestCase):
         self.assertEqual(2, len(list_of_batches[0]))
         self.assertLessEqual(1, np.max(np.abs(df.audios)))
         self.assertIsNotNone(list_of_batches[0][1])
-        self.assertGreaterEqual(11, np.max(df.targets))
+        self.assertGreaterEqual(36, np.max(df.targets))
         self.assertIn("/test/errors.wav", df.corrupted_file_paths)
+
+    def test_data_feeder_real_with_unk(self):
+        _, validation, _ = get_list_of_wav_paths(data_version=self.data_version)
+        df = DataFeeder(data_version=self.data_version,
+                        file_paths=validation,
+                        batch_size=5,
+                        include_silence=False,
+                        known_commands=["left", "right"],
+                        include_unknown=True)
+        self.assertEqual(len(df.targets), len(df.audios))
+        self.assertEqual(9981, len(df.audios))
+        self.assertEqual({0, 1, 2}, set(df.targets.tolist()))
+
+    def test_data_feeder_real_with_unk_and_silence(self):
+        _, validation, _ = get_list_of_wav_paths(data_version=self.data_version)
+        df = DataFeeder(data_version=self.data_version,
+                        file_paths=validation,
+                        batch_size=5,
+                        include_silence=True,
+                        known_commands=["left", "right"],
+                        include_unknown=True)
+        self.assertEqual(len(df.targets), len(df.audios))
+        self.assertEqual(9981 + int(9981 * 0.15) + int(9981 * 0.05) + int(9981 * 0.0025), len(df.audios))
+        self.assertEqual({0, 1, 2, 3}, set(df.targets.tolist()))
+
+    def test_data_feeder_real_with_no_unk(self):
+        _, validation, _ = get_list_of_wav_paths(data_version=self.data_version)
+        df = DataFeeder(data_version=self.data_version,
+                        file_paths=validation,
+                        batch_size=5,
+                        include_silence=False,
+                        known_commands=["left", "right"],
+                        include_unknown=False)
+        self.assertEqual(len(df.targets), len(df.audios))
+        self.assertEqual(715, len(df.audios))
+        self.assertEqual({0, 1}, set(df.targets.tolist()))

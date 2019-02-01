@@ -79,7 +79,6 @@ def get_augmented_data_path(data_version: str):
 
 @_is_output_path
 def get_tensorboard_logs_path():
-    # path = "/home/mck/.logs_tensorboard/"
     path = json.load(open("settings.json"))["paths"]["tensorboard_logs"]
     return path
 

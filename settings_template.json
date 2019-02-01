@@ -7,5 +7,6 @@
   "batch_size": "",
   "n_epochs": "",
   "model_alias": "",
-  "data_version": ""
+  "data_version": "",
+  "task": ""
 }
