@@ -78,6 +78,12 @@ def get_augmented_data_path(data_version: str):
 
 
 @_is_output_path
+def get_augmented_data_folder(data_version: str, folder: str):
+    path = os.path.join(get_augmented_data_path(data_version=data_version), str(folder))
+    return path
+
+
+@_is_output_path
 def get_tensorboard_logs_path():
     path = json.load(open("settings.json"))["paths"]["tensorboard_logs"]
     return path

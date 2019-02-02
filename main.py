@@ -9,7 +9,7 @@ import torch
 from tensorboardX import SummaryWriter
 
 from src.architecture import XceptionArchitecture1d
-from src.common_paths import get_tensorboard_logs_path, get_model_path, get_dataset_filepath
+from src.common_paths import get_tensorboard_logs_path, get_model_path, get_dataset_filepath, get_augmented_data_folder
 from src.constants import available_tasks, commands, unknown_class_addition
 from src.data_processing import get_list_of_wav_paths, batch_augment_files, DataFeeder, download_dataset, \
     decompress_dataset
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     model_alias = json.load(open(experiment_settings_filepath))["model_alias"]
     alias = f"{task}_m-{model_alias}_d-{data_version}"
     assert task in available_tasks
-    known_commands = commands[task]
+    known_commands = commands[task][:]
     include_unknown = unknown_class_addition[task]
 
     n_jobs = multiprocessing.cpu_count()
@@ -76,8 +76,11 @@ if __name__ == "__main__":
 
     if n_augmentations > 0:
         train_files, _, _ = get_list_of_wav_paths(data_version=data_version)
-        batch_augment_files(data_version=data_version, list_of_files=train_files, n_times=n_augmentations,
-                            n_jobs=n_jobs)
+        for i in range(n_augmentations):
+            if len(os.listdir(get_augmented_data_folder(data_version, str(i)))) == 0:
+                print("Generating augmentation no. {}".format(i))
+                batch_augment_files(data_version=data_version, list_of_files=train_files, folder_name=str(i),
+                                    n_jobs=n_jobs)
 
     # Load all data paths and build the data feeders
     random.seed(655321)
@@ -85,15 +88,16 @@ if __name__ == "__main__":
     torch.random.manual_seed(655321)
 
     train_paths, validation_paths, test_paths = get_list_of_wav_paths(data_version=data_version,
-                                                                      include_augmentations=True)
+                                                                      n_augmentations=n_augmentations)
     data_feeder_train = DataFeeder(data_version=data_version, file_paths=train_paths, batch_size=batch_size,
                                    include_silence=False, include_unknown=include_unknown,
-                                   known_commands=known_commands)
+                                   known_commands=known_commands[:])
     data_feeder_validation = DataFeeder(data_version=data_version, file_paths=validation_paths, batch_size=batch_size,
-                                        include_silence=True, include_unknown=include_unknown,
-                                        known_commands=known_commands)
+                                        include_silence=False, include_unknown=include_unknown,
+                                        known_commands=known_commands[:])
     data_feeder_test = DataFeeder(data_version=data_version, file_paths=test_paths, batch_size=batch_size,
-                                  include_silence=True, include_unknown=include_unknown, known_commands=known_commands)
+                                  include_silence=False, include_unknown=include_unknown,
+                                  known_commands=known_commands[:])
 
     # Load architecture
     model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4, bn_momentum=bn_momentum)

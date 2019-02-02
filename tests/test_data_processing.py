@@ -1,9 +1,10 @@
 import os
+import shutil
 from unittest import TestCase
 
 import numpy as np
 
-from src.common_paths import get_dataset_filepath, get_augmented_data_path
+from src.common_paths import get_dataset_filepath, get_augmented_data_path, get_augmented_data_folder
 from src.data_processing import get_list_of_wav_paths, generate_white_noise_clip, load_real_noise_clips, \
     get_random_real_noise_subclip, load_random_real_noise_clip, preprocess_wav, generate_augmented_wav, \
     batch_augment_files, DataFeeder, download_dataset, decompress_dataset
@@ -42,7 +43,7 @@ class TestDataProcessing(TestCase):
 
     def test_get_list_of_wav_paths_augmented(self):
         train, val, test = get_list_of_wav_paths(data_version=self.data_version)
-        train_aug, val_aug, test_aug = get_list_of_wav_paths(data_version=self.data_version, include_augmentations=True)
+        train_aug, val_aug, test_aug = get_list_of_wav_paths(data_version=self.data_version, n_augmentations="all")
         self.assertGreaterEqual(len(train_aug), len(train))
         self.assertEqual(len(val_aug), len(val))
         self.assertEqual(len(test_aug), len(test))
@@ -95,45 +96,45 @@ class TestDataProcessing(TestCase):
         self.assertLess(500, len(set(wav_distorted)))
 
     def test_generate_augmented_wav(self):
-        filepath_augmented = os.path.join(get_augmented_data_path(data_version=self.data_version), "examples",
-                                          "testaudio_testsuffix.wav")
+        filepath_augmented = os.path.join(get_augmented_data_path(data_version=self.data_version), "testfolder", "examples",
+                                          "testaudio.wav")
         if os.path.exists(filepath_augmented):
             os.remove(filepath_augmented)
-        generate_augmented_wav(data_version=self.data_version, filepath=self.wav_filepath, suffix="testsuffix")
+        generate_augmented_wav(data_version=self.data_version, filepath=self.wav_filepath, folder="testfolder")
         self.assertTrue(os.path.exists(filepath_augmented))
         _, wav = read_wavfile(filepath_augmented)
         self.assertEqual(16000, len(wav))
         self.assertGreaterEqual(1, np.abs(wav).max())
         os.remove(filepath_augmented)
-        os.rmdir(os.path.split(filepath_augmented)[0])
+        shutil.rmtree(os.path.split(os.path.split(filepath_augmented)[0])[0])
 
     def test_batch_augment_files(self):
         list_of_files = [self.wav_filepath]
-        batch_augment_files(data_version=self.data_version, list_of_files=list_of_files, n_times=10, n_jobs=1)
         for i in range(10):
             for filepath in list_of_files:
+                folder_name = "test_"+str(i)
+                batch_augment_files(data_version=self.data_version, list_of_files=list_of_files,
+                                    folder_name=folder_name, n_jobs=1)
                 path, filename = os.path.split(filepath)
-                _, folder = os.path.split(path)
-                name, extension = os.path.splitext(filename)
-                output_filename = name + "_" + str(i) + extension
-                output_filepath = os.path.join(get_augmented_data_path(data_version=self.data_version), folder,
-                                               output_filename)
+                _, folder_class = os.path.split(path)
+                output_filepath = os.path.join(get_augmented_data_folder(data_version=self.data_version,
+                                                                         folder=folder_name), folder_class, filename)
                 self.assertTrue(os.path.exists(output_filepath))
-                os.remove(output_filepath)
+                shutil.rmtree(os.path.split(os.path.split(output_filepath)[0])[0])
 
     def test_batch_augment_files_multiprocessing(self):
         list_of_files = [self.wav_filepath]
-        batch_augment_files(data_version=self.data_version, list_of_files=list_of_files, n_times=10, n_jobs=2)
         for i in range(10):
             for filepath in list_of_files:
+                folder_name = "test_"+str(i)
+                batch_augment_files(data_version=self.data_version, list_of_files=list_of_files,
+                                    folder_name=folder_name, n_jobs=2)
                 path, filename = os.path.split(filepath)
-                _, folder = os.path.split(path)
-                name, extension = os.path.splitext(filename)
-                output_filename = name + "_" + str(i) + extension
-                output_filepath = os.path.join(get_augmented_data_path(data_version=self.data_version), folder,
-                                               output_filename)
+                _, folder_class = os.path.split(path)
+                output_filepath = os.path.join(get_augmented_data_folder(data_version=self.data_version,
+                                                                         folder=folder_name), folder_class, filename)
                 self.assertTrue(os.path.exists(output_filepath))
-                os.remove(output_filepath)
+                shutil.rmtree(os.path.split(os.path.split(output_filepath)[0])[0])
 
     def test_data_feeder(self):
         train, _, _ = get_list_of_wav_paths(data_version=self.data_version)

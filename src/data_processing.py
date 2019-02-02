@@ -1,6 +1,7 @@
 import os
 import random
 import tarfile
+import warnings
 import urllib.request
 from multiprocessing.dummy import Pool
 
@@ -9,7 +10,8 @@ import torch
 from scipy.io import wavfile
 from tqdm import tqdm
 
-from src.common_paths import get_training_data_path, get_dataset_filepath, get_augmented_data_path
+from src.common_paths import get_training_data_path, get_dataset_filepath, get_augmented_data_path, \
+    get_augmented_data_folder
 from src.data_tools import read_wavfile, draw_random_subclip, randomly_distort_wavfile, fix_wavfile_length, \
     normalize_wavfile
 from src.general_utilities import batching, flatten, recursive_listdir
@@ -36,16 +38,26 @@ def decompress_dataset(data_version: str):
     tar.close()
 
 
-def get_list_of_wav_paths(data_version: str, include_augmentations: bool = False) -> tuple:
+def get_list_of_wav_paths(data_version: str, n_augmentations: [int, str] = 0) -> tuple:
     """
     Retrieves the list of filepaths that belong to train, validation and test
-    :param include_augmentations: if set, the code will look for files in the augmented folder. These files will be add
-    to the training list (bool)
+    :param n_augmentations: specify the number of augmentations to use or specify "all" to load all the available ones
+    (int|str)
     :param data_version: specifies the version of the data to use (str {"0.01", "0.02"})
     :return: list of training paths, list of validation paths and list of test paths (list of lists)
     """
     folders = [get_training_data_path(data_version=data_version)]
-    folders += [get_augmented_data_path(data_version=data_version)] if include_augmentations else []
+    if type(n_augmentations) == int:
+        folders += [get_augmented_data_folder(data_version=data_version, folder=str(f)) for f in range(n_augmentations)]
+    elif n_augmentations == "all":
+        base = get_augmented_data_path(data_version=data_version)
+        folders += [os.path.join(base, f) for f in os.listdir(base)]
+    else:
+        raise ValueError(f"'n_augmentations' parameter value not recognized as a valid argument ('all'|int): {n_augmentations}")
+
+    for path in folders:
+        if len(os.listdir(path)) == 0:
+            warnings.warn(f"Attempting to load files from an empty folder: {path}")
 
     list_test = open(os.path.join(get_training_data_path(data_version=data_version), "testing_list.txt"))
     list_test = list(
@@ -131,53 +143,50 @@ def preprocess_wav(wav: np.array, distort: bool = True) -> np.array:
     return wav.astype(np.float32)
 
 
-def generate_augmented_wav(data_version: str, filepath: str, suffix: str = "") -> None:
+def generate_augmented_wav(data_version: str, filepath: str, folder: str) -> None:
     """
     Given a filepath of a wav file, loads it, preprocesses it and stores it in the default folder for augmentations.
     :param data_version: specifies the version of the data to use (str {"0.01", "0.02"})
     :param filepath:  file path of an existing wav file (str)
-    :param suffix: piece of text to be appended before the extension in the output filepath. It is not needed to add
-     a separator at the begining, "_" is added by default(str)
+    :param folder: Name of the folder which will contain this version of the augmentation (str)
     :return: None (void)
     """
     try:
         folder_class = os.path.split(os.path.split(filepath)[-2])[-1]
-        output_path = os.path.join(get_augmented_data_path(data_version=data_version), folder_class)
+        output_path = os.path.join(get_augmented_data_folder(data_version=data_version, folder=folder), folder_class)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         sample_rate, wav = read_wavfile(filepath)
         wav = preprocess_wav(wav, distort=True)
         # Add suffix
         filename = os.path.split(filepath)[-1]
-        filename = os.path.splitext(filename)[0] + "_" + suffix + os.path.splitext(filename)[1]
         output_filepath = os.path.join(output_path, filename)
         wavfile.write(output_filepath, sample_rate, wav)
     except:
         print("Error found with file {}".format(filepath))
 
 
-def batch_augment_files(data_version: str, list_of_files: list, n_times: int, n_jobs: int = 1) -> None:
+def batch_augment_files(data_version: str, list_of_files: list, folder_name: str, n_jobs: int = 1) -> None:
     """
     Runs the generate_augmented_wav function over a list of files
     :param data_version: specifies the version of the data to use (str {"0.01", "0.02"})
     :param list_of_files: specifies the list of files to use to generate the augmented versions. Generally training
     data. (list)
-    :param n_times: number of augmentations to perform (int)
+    :param folder_name: name of the folder which will contain the augmentations (int)
     :param n_jobs: number of jobs to use (int)
     :return: None (Void)
     """
-    for i in range(n_times):
-        list_of_files = list_of_files[:]
-        random.shuffle(list_of_files)
-        if n_jobs > 1:
-            pool = Pool(n_jobs)
-            pool.map(lambda x: generate_augmented_wav(data_version=data_version, filepath=x,
-                                                      suffix=str(i)), list_of_files)
-            pool.close()
-            pool.join()
-        else:
-            list(map(lambda x: generate_augmented_wav(data_version=data_version, filepath=x,
-                                                      suffix=str(i)), list_of_files))
+    list_of_files = list_of_files[:]
+    random.shuffle(list_of_files)
+    if n_jobs > 1:
+        pool = Pool(n_jobs)
+        pool.map(lambda x: generate_augmented_wav(data_version=data_version, filepath=x,
+                                                  folder=folder_name), list_of_files)
+        pool.close()
+        pool.join()
+    else:
+        list(map(lambda x: generate_augmented_wav(data_version=data_version, filepath=x,
+                                                  folder=folder_name), list_of_files))
 
 
 class DataFeeder:
@@ -189,16 +198,16 @@ class DataFeeder:
                  include_unknown: bool = False,
                  shuffle: bool = True,
                  scoring: bool = False) -> None:
-        self.known_commands = known_commands
+        self.known_commands = known_commands[:]
         self.include_unknown = include_unknown
         self.include_silence = include_silence
         if self.include_unknown:
-            self.known_commands += ["unknown"]
+            self.known_commands += ("unknown",)
         else:
             if not scoring:
                 # Filter unknown
                 file_paths = [f for f in file_paths if os.path.split(os.path.split(f)[0])[1] in self.known_commands]
-        if self.include_silence: self.known_commands += ["silence"]
+        if self.include_silence: self.known_commands += ("silence",)
         self.scoring = scoring
         self.shuffle = shuffle
         self.data_version = data_version
