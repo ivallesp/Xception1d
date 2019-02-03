@@ -109,6 +109,9 @@ class LayerNormConv2d(nn.Module):
 
     def forward(self, x):
         self._check_input_dim(x)
+        if x.is_cuda:
+            self.gamma = self.gamma.cuda()
+            self.beta = self.beta.cuda()
         x_flat = x.transpose(1, -1).contiguous().view((-1, x.size(1)))
         mean = x_flat.mean(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
         std = x_flat.std(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
@@ -142,6 +145,9 @@ class LayerNormConv1d(nn.Module):
 
     def forward(self, x):
         self._check_input_dim(x)
+        if x.is_cuda:
+            self.gamma = self.gamma.cuda()
+            self.beta = self.beta.cuda()
         x_flat = x.transpose(1, -1).contiguous().view((-1, x.size(1)))
         mean = x_flat.mean(0).unsqueeze(-1).expand_as(x)
         std = x_flat.std(0).unsqueeze(-1).expand_as(x)
