@@ -98,7 +98,11 @@ if __name__ == "__main__":
     data_feeder_test = DataFeeder(data_version=data_version, file_paths=test_paths, batch_size=batch_size,
                                   include_silence=False, include_unknown=include_unknown,
                                   known_commands=known_commands[:])
-
+   
+    assert data_feeder_train.target_encoder == data_feeder_validation.target_encoder == data_feeder_test.target_encoder
+    
+    assert data_feeder_train.known_commands == data_feeder_validation.known_commands == data_feeder_test.known_commands
+    
     # Load architecture
     model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4, bn_momentum=bn_momentum)
     if run_in_gpu: model.cuda()

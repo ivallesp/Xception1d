@@ -1,5 +1,5 @@
 {
-  "n_augmentations": 1,
+  "n_augmentations": 5,
   "run_in_gpu": true,
   "batch_size": 32,
   "n_epochs": 10000,
