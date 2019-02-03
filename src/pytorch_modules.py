@@ -54,12 +54,12 @@ class XceptionModule1d(nn.Module):
 
         modules = []
         for i in range(n_modules):
-            modules.append(Swish())
-            modules.append(nn.BatchNorm1d(in_channels, momentum=bn_momentum))
-            modules.append(DepthwiseSeparableConv1d(in_channels = in_channels,
-                                                    out_channels = out_channels,
-                                                    kernel_size = kernel_size,
-                                                    padding = padding))
+            modules.append(nn.ReLU(True))
+            modules.append(LayerNormConv1d(in_channels))
+            modules.append(DepthwiseSeparableConv1d(in_channels=in_channels,
+                                                    out_channels=out_channels,
+                                                    kernel_size=kernel_size,
+                                                    padding=padding))
 
             in_channels = out_channels
         if pooling_stride > 1:
@@ -81,3 +81,73 @@ class Flatten(nn.Module):
 class Swish(nn.Module):
     def forward(self, x):
         return x * torch.sigmoid(x)
+
+
+class LayerNormConv2d(nn.Module):
+    """
+    Layer normalization for conv1d layers
+    Reference:
+    - code modified from https://gist.github.com/wassname/ecd2dac6fc8f9918149853d17e3abf02
+    - paper: https://arxiv.org/abs/1607.06450
+    Usage:
+        ln = LayerNormConv(3)
+        x = Variable(torch.rand((1,3,4)))
+        ln(x).size()
+    """
+
+    def __init__(self, features, eps=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(features)).unsqueeze(-1).unsqueeze(-1)
+        self.beta = nn.Parameter(torch.zeros(features)).unsqueeze(-1).unsqueeze(-1)
+        self.eps = eps
+        self.features = features
+
+    def _check_input_dim(self, input):
+        if input.size(1) != self.gamma.nelement():
+            raise ValueError('got {}-feature tensor, expected {}'
+                             .format(input.size(1), self.features))
+
+    def forward(self, x):
+        self._check_input_dim(x)
+        if x.is_cuda and (not self.gamma.is_cuda) or (not self.beta.is_cuda):
+            self.gamma = self.gamma.cuda()
+            self.beta = self.beta.cuda()
+        x_flat = x.transpose(1, -1).contiguous().view((-1, x.size(1)))
+        mean = x_flat.mean(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
+        std = x_flat.std(0).unsqueeze(-1).unsqueeze(-1).expand_as(x)
+        return self.gamma.expand_as(x) * (x - mean) / (std + self.eps) + self.beta.expand_as(x)
+
+
+class LayerNormConv1d(nn.Module):
+    """
+    Layer normalization for conv1d layers
+    Reference:
+    - code modified from https://gist.github.com/wassname/ecd2dac6fc8f9918149853d17e3abf02
+    - paper: https://arxiv.org/abs/1607.06450
+    Usage:
+        ln = LayerNormConv(3)
+        x = Variable(torch.rand((1,3,4)))
+        ln(x).size()
+    """
+
+    def __init__(self, features, eps=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(features)).unsqueeze(-1)
+        self.beta = nn.Parameter(torch.zeros(features)).unsqueeze(-1)
+        self.eps = eps
+        self.features = features
+
+    def _check_input_dim(self, input):
+        if input.size(1) != self.gamma.nelement():
+            raise ValueError('got {}-feature tensor, expected {}'
+                             .format(input.size(1), self.features))
+
+    def forward(self, x):
+        self._check_input_dim(x)
+        x_flat = x.transpose(1, -1).contiguous().view((-1, x.size(1)))
+        mean = x_flat.mean(0).unsqueeze(-1).expand_as(x)
+        std = x_flat.std(0).unsqueeze(-1).expand_as(x)
+        if x.is_cuda:
+            return self.gamma.cuda() * (x - mean) / (std + self.eps) + self.beta.cuda()
+        else:
+            return self.gamma * (x - mean) / (std + self.eps) + self.beta
