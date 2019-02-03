@@ -62,6 +62,7 @@ if __name__ == "__main__":
     run_in_gpu = json.load(open(experiment_settings_filepath))["run_in_gpu"]
     n_augmentations = json.load(open(experiment_settings_filepath))["n_augmentations"]
     bn_momentum = json.load(open(experiment_settings_filepath))["bn_momentum"]
+    weight_decay = json.load(open(experiment_settings_filepath))["weight_decay"]
 
 
     # Download and decompress the data if necessary
@@ -104,19 +105,28 @@ if __name__ == "__main__":
     assert data_feeder_train.known_commands == data_feeder_validation.known_commands == data_feeder_test.known_commands
     
     # Load architecture
-    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4, bn_momentum=bn_momentum)
+    model = XceptionArchitecture1d(n_classes=len(data_feeder_train.known_commands), lr=1e-4, bn_momentum=bn_momentum,
+                                   weight_decay=weight_decay)
     if run_in_gpu: model.cuda()
 
     # Instantiate summary writer for tensorboard
     sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), alias))
+    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=model.optimizer,
+                                                              mode="max",
+                                                              factor=0.3,
+                                                              patience=2,
+                                                              verbose=True)
     best_score = 0
     c = 0
-
+    loss_train, accuracy_train = None, None
     for epoch in range(n_epochs):
         # Evaluate model
         loss_val, accuracy_val = evaluate_model(model=model, data_feeder=data_feeder_validation, run_in_gpu=run_in_gpu)
         sw.add_scalar("validation/loss", loss_val, c)
         sw.add_scalar('validation/accuracy', accuracy_val, c)
+
+        print(f"[{epoch + 1}] Loss train: {loss_train} | Acc train: {accuracy_train} | Loss val: {loss_val} | Acc val: {accuracy_val}")
+        lr_scheduler.step(accuracy_val)
 
         # Save model
         if accuracy_val > best_score:
@@ -140,5 +150,3 @@ if __name__ == "__main__":
         loss_train /= (n + 1)
         accuracy_train /= (n + 1)
 
-        print(
-            f"[{epoch + 1}] Loss train: {loss_train} | Acc train: {accuracy_train} | Loss val: {loss_val} | Acc val: {accuracy_val}")
