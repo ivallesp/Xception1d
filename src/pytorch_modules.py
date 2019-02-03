@@ -54,12 +54,12 @@ class XceptionModule1d(nn.Module):
 
         modules = []
         for i in range(n_modules):
-            modules.append(Swish())
+            modules.append(nn.ReLU(True))
             modules.append(nn.BatchNorm1d(in_channels, momentum=bn_momentum))
-            modules.append(DepthwiseSeparableConv1d(in_channels = in_channels,
-                                                    out_channels = out_channels,
-                                                    kernel_size = kernel_size,
-                                                    padding = padding))
+            modules.append(DepthwiseSeparableConv1d(in_channels=in_channels,
+                                                    out_channels=out_channels,
+                                                    kernel_size=kernel_size,
+                                                    padding=padding))
 
             in_channels = out_channels
         if pooling_stride > 1:
