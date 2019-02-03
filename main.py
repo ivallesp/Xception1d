@@ -114,7 +114,7 @@ if __name__ == "__main__":
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=model.optimizer,
                                                               mode="max",
                                                               factor=0.3,
-                                                              patience=2,
+                                                              patience=4,
                                                               verbose=True)
     best_score = 0
     c = 0
