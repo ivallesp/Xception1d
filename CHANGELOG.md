@@ -1,6 +1,8 @@
 # Changelog of the experiments run
 This document contains the most important differences implemented in every experiment.
 
+## Version 0.5
+- Batchnorm to InstanceNorm (for conv layers) and LayerNorm (for dense layers)
 
 ## Version 0.4.1
 - Back to ReLU activations
