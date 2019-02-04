@@ -1,11 +1,11 @@
 {
-  "n_augmentations": 5,
+  "n_augmentations": 1,
   "run_in_gpu": true,
   "batch_size": 32,
   "n_epochs": 10000,
   "bn_momentum": 0.995,
   "weight_decay": 0.001,
-  "model_alias": "0.5",
+  "model_alias": "0.51",
   "data_version": "0.01",
   "task": "35-words-recognition"
 }
