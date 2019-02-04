@@ -223,39 +223,3 @@ class TestFlatten(TestCase):
     def test_values(self):
         self.assertTrue(self, (self.flatten.forward(self.input1d).sum(dim=1) == self.input1d.sum(dim=1)).all())
         self.assertTrue(self, (self.flatten.forward(self.input2d).sum(dim=1) == self.input2d.sum(dim=(1, 2))).all())
-        self.assertTrue(self, (self.flatten.forward(self.input3d).sum(dim=1) == self.input3d.sum(dim=(1, 2, 3))).all())
-
-
-class TestLayerNorm1d(TestCase):
-    def setUp(self):
-        self.input_tensor = torch.rand(128, 3, 25)
-
-    def test_layer_norm(self):
-        ln = LayerNormConv1d(3)
-        normalized_tensor = ln(self.input_tensor).detach().numpy()
-        self.assertTrue((normalized_tensor != 0).any())
-        self.assertEqual(self.input_tensor.shape, normalized_tensor.shape)
-        for i in range(3):
-            self.assertAlmostEqual(0, normalized_tensor[:, i, :].mean(), delta=0.005)
-            self.assertAlmostEqual(1, normalized_tensor[:, i, :].std(), delta=0.005)
-
-
-class TestLayerNorm2d(TestCase):
-    def setUp(self):
-        self.input_tensor = torch.rand(128, 3, 25, 25)
-
-    def test_layer_norm(self):
-        ln = LayerNormConv2d(3)
-        normalized_tensor = ln(self.input_tensor).detach().numpy()
-        self.assertTrue((normalized_tensor != 0).any())
-        self.assertEqual(self.input_tensor.shape, normalized_tensor.shape)
-        for i in range(3):
-            self.assertAlmostEqual(0, normalized_tensor[:, i, :].mean(), delta=0.005)
-            self.assertAlmostEqual(1, normalized_tensor[:, i, :].std(), delta=0.005)
-
-class TestOtherFunctions(TestCase):
-    def test_swish_activation(self):
-        for i in range(10):
-            r = torch.rand(1)
-            a = Swish()(r)
-            self.assertAlmostEqual(a.numpy(), r.numpy() / (1 + np.exp(-r.numpy())), delta=0.001)
