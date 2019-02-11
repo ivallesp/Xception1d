@@ -4,8 +4,7 @@ import numpy as np
 import torch
 
 from src.pytorch_modules import DepthwiseSeparableConv2d, DepthwiseSeparableConv1d, TransferenceFunctionModule, \
-    XceptionModule1d, Flatten, Swish, LayerNormConv2d, LayerNormConv1d
-
+    XceptionModule1d, Flatten, Swish
 
 class TestDepthwiseSeparableConv2d(TestCase):
     def setUp(self):
