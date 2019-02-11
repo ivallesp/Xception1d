@@ -115,8 +115,8 @@ if __name__ == "__main__":
     sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), alias+"_"+str(random_seed)))
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=model.optimizer,
                                                               mode="max",
-                                                              factor=0.3,
-                                                              patience=2,
+                                                              factor=0.5,
+                                                              patience=4,
                                                               verbose=True)
     best_score = 0
     c = 0
@@ -137,6 +137,7 @@ if __name__ == "__main__":
 
         # Train model
         loss_train, accuracy_train = 0, 0
+        data_feeder_train.shuffle_data() # Shuffle the whole data matrix to get rid of incremental gradient [Bengio 2012]
         for n, (batch_audio_train, batch_target_train) in enumerate(data_feeder_train.get_batches()):
             if run_in_gpu:
                 batch_audio_train = batch_audio_train.cuda()

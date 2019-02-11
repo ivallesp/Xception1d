@@ -55,7 +55,7 @@ class XceptionModule1d(nn.Module):
         modules = []
         for i in range(n_modules):
             modules.append(nn.ReLU(True))
-            modules.append(nn.BatchNorm1d(in_channels, momentum=bn_momentum))
+            modules.append(nn.InstanceNorm1d(in_channels))
             modules.append(DepthwiseSeparableConv1d(in_channels=in_channels,
                                                     out_channels=out_channels,
                                                     kernel_size=kernel_size,
@@ -81,3 +81,4 @@ class Flatten(nn.Module):
 class Swish(nn.Module):
     def forward(self, x):
         return x * torch.sigmoid(x)
+

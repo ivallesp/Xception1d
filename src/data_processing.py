@@ -219,9 +219,8 @@ class DataFeeder:
         self.set_batch_size(batch_size)
         self.noise_clips = load_real_noise_clips(data_version=data_version)
         self.load_data(self.file_paths, add_noise=include_silence, load_targets=not scoring)
-        if shuffle:
-            self.shuffle_data()
         self.prepare_data()
+        self.shuffle_data()
         assert not np.isnan(self.audios).any()
         assert self.audios.max() <= 1
         assert self.audios.min() >= -1
@@ -238,6 +237,8 @@ class DataFeeder:
         joined_list = list(zip(self.audios, self.targets))
         random.shuffle(joined_list)
         self.audios, self.targets = list(zip(*joined_list))  # Shuffle!
+        self.audios = np.array(self.audios)
+        self.targets = np.array(self.targets)
 
     def load_data(self, file_paths: list, add_noise: bool, load_targets: bool = True) -> None:
         self.audios = []
