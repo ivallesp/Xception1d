@@ -47,6 +47,8 @@ def model_predict(model, data_feeder, run_in_gpu):
 
 if __name__ == "__main__":
     experiment_settings_filepath = sys.argv[1]  # Retrieve the path of the model_settings.json file
+    random_seed = int(sys.argv[2])
+
     # Parameters configuration
     task = json.load(open(experiment_settings_filepath))["task"]
     data_version = json.load(open(experiment_settings_filepath))["data_version"]
@@ -71,9 +73,9 @@ if __name__ == "__main__":
         decompress_dataset(data_version)
 
     # Generate data augmentations if required
-    random.seed(655321)
-    np.random.seed(655321)
-    torch.random.manual_seed(655321)
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.random.manual_seed(random_seed)
 
     if n_augmentations > 0:
         train_files, _, _ = get_list_of_wav_paths(data_version=data_version)
@@ -84,9 +86,9 @@ if __name__ == "__main__":
                                     n_jobs=n_jobs)
 
     # Load all data paths and build the data feeders
-    random.seed(655321)
-    np.random.seed(655321)
-    torch.random.manual_seed(655321)
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.random.manual_seed(random_seed)
 
     train_paths, validation_paths, test_paths = get_list_of_wav_paths(data_version=data_version,
                                                                       n_augmentations=n_augmentations)
@@ -110,7 +112,7 @@ if __name__ == "__main__":
     if run_in_gpu: model.cuda()
 
     # Instantiate summary writer for tensorboard
-    sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), alias))
+    sw = SummaryWriter(log_dir=os.path.join(get_tensorboard_logs_path(), alias+"_"+str(random_seed)))
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=model.optimizer,
                                                               mode="max",
                                                               factor=0.3,
@@ -130,7 +132,7 @@ if __name__ == "__main__":
 
         # Save model
         if accuracy_val > best_score:
-            torch.save(model.state_dict(), os.path.join(get_model_path(model_alias=alias), f'checkpoint.pth'))
+            torch.save(model.state_dict(), os.path.join(get_model_path(model_alias=alias), f'checkpoint_{random_seed}.pth'))
             best_score = accuracy_val
 
         # Train model
