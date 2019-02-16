@@ -1,6 +1,13 @@
 # Changelog of the experiments run
 This document contains the most important differences implemented in every experiment.
 
+## Version 0.5.1 (submitted to the journal)
+- Add learning rate decay
+- Add dropout
+- Add small weight decay
+- Fix 'left-right' task to take the unknown class
+- Other enhancements
+
 ## Version 0.5
 - Batchnorm to InstanceNorm (for conv layers) and LayerNorm (for dense layers)
 

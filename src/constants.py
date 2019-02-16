@@ -18,4 +18,4 @@ commands = {"35-words-recognition": ("zero", "one", "two", "three", "four", "fiv
 unknown_class_addition = {"35-words-recognition": False,
                           "20-commands-recognition": True,
                           "10-commands-recognition": True,
-                          "left-right": False}
+                          "left-right": True}
