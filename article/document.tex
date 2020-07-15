@@ -1,4 +1,4 @@
-\documentclass[review]{elsarticle}
+\documentclass{elsarticle}
 
 \usepackage{lineno,hyperref}
 
@@ -11,13 +11,13 @@
 \usepackage{tablefootnote}
 
 
-
+\usepackage[a4paper, total={6in, 9in}]{geometry}
 
 
 
 \modulolinenumbers[5]
 
-\journal{Neurocomputing}
+\journal{Amazon - Alexa TTS}
 
 %%%%%%%%%%%%%%%%%%%%%%%
 %% Elsevier bibliography styles
@@ -86,7 +86,7 @@
 \address[UV]{Escola Tècnica Superior d\textsc{\char13}Enginyeria, University of Valencia, Avenida de la Universitat s/n 46100 Burjassot, Valencia, Spain}
 
 \begin{abstract}
-Speech commands recognition is a very important task nowadays due to the increase of the global interest in personal assistants. The field of conversational agents is growing fast and there is an increasing need for algorithms that perform well in order to enhance natural interaction. In this work we show how we achieved state of the art results by adapting and tweaking the \textit{Xception} [Chollet, 2017] algorithm which achieved outstanding results in several computer vision tasks. We obtained about 96\% accuracy when classifying audio clips belonging to 35 different categories, beating human performance at the most complex tasks proposed.
+Speech commands recognition is a very important task nowadays due to the increase of the global interest in personal assistants. The field of conversational agents is growing fast and there is an increasing need for algorithms that perform well in order to enhance natural interaction. In this work we show how we achieved state of the art results by adapting and tweaking the \textit{Xception} algorithm, published by François Chollet in 2017, which achieved outstanding results in several computer vision tasks. We obtained about 96\% accuracy when classifying audio clips belonging to 35 different categories, beating human performance at the most complex tasks proposed.
 \end{abstract}
 
 \begin{keyword}
@@ -253,38 +253,20 @@ A \textit{depthwise separable convolution} performs an operation which, given an
 
 
 \begin{enumerate}
-	\item \textit{Depthwise convolution} \cite{Yunhui2019}: consists of applying a single filter to each channel. It produces an output tensor with potentially different spatial/temporal dimensions than the input one (depending on the stride, the size and the padding of the convolution operation to be applied). The channels dimension of the output tensor remain the same as the input.
+	\item \textit{Depthwise convolution} \cite{Yunhui2019}: consists of convolving a separate filter per channel. It produces an output tensor with potentially a different spatial/temporal dimensions size than the input (depending on the stride, the size and the padding of the convolution operation to be applied). The number of channels of the output tensor is constrained to be the same as the input.
 	\item \textit{Pointwise convolution} \cite{Gao2018}: consists of applying a set of size-1 convolutions (as many as number of output channels desired). This operation can modify the channels dimension, leaving the spatial/temporal dimensions intact.
 \end{enumerate}
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.8\linewidth]{img/dws_conv}
+	\includegraphics[width=0.65\linewidth]{img/dws_conv}
 	\caption{\textit{Depthwise separable convolution} diagram showing how the whole computation is done in two steps: the \textit{depthwise convolution} followed by the \textit{pointwise convolution}.}
 	\label{fig:dwsconv}
 \end{figure}
 
-The \textit{regular convolution} and \textit{depthwise convolution} operations \cite{Howard2017}  are defined \footnote{in both cases assuming a stride of one, \textit{SAME} padding and odd size convolution kernels} in equations \ref{eq:reg_conv} and  \ref{eq:dw_conv} for illustrative purposes, where 
+Please refer to the appendix 1 to see the proper mathematical definitions.
 
-\begin{itemize}
-	\item $\mathbf{F}$ is the feature map over which the convolution operation is intended to be applied. It has a shape of $D \times M$, where $D$ represents the spatial/temporal dimension and $M$ the number of input channels.
-	\item $\mathbf{K}$ is the convolution kernel and has a shape of $S \times M$ where $S$ is the size of the kernel.
-	\item $\mathbf{G}$ is the output tensor produced by applying the \textit{regular convolution} operation with the filter $K$ over the input $F$ resulting in a vector of length $D$.
-	\item $\hat{\mathbf{G}}$ is the output tensor produced by applying the \textit{depthwise convolution} with the filter $K$ over the input $F$, resulting in a matrix with shape $D \times M$. The number of output channels is restricted to be equal to the number of input channels $M$. 
-\end{itemize}
-
-
-\begin{equation}
-\mathbf{G}_{x} = \sum_{s, m}^{S,M} \mathbf{K}_{s, m} \cdot \mathbf{F}_{x+s-\frac{S-1}{2}, m}
-\label{eq:reg_conv}
-\end{equation}
-
-\begin{equation}
-\hat{\mathbf{G}}_{x, m} = \sum_{s}^{S} \mathbf{K}_{s, m} \cdot \mathbf{F}_{x+s-\frac{S-1}{2}, m} 
-\label{eq:dw_conv}
-\end{equation}
-
-See that $\mathbf{G}_{x} =  \sum_{m}^{M} \hat{\mathbf{G}}_{x, m}$. A \textit{pointwise convolution} would be equivalent of applying a \textit{regular} convolution with $S=1$. As it can be noticed in equation \ref{eq:dw_conv}, the \textit{depthwise convolution} does not combine different channels for producing the output, and hence always produces an output tensor which has the same number of channels as the input tensor. This difference makes this operation much more efficient than the \textit{regular convolution}, at the cost of loosing the ability to generate new features by combining different channels. That is the reason why the \textit{pointwise convolution} is applied after the \textit{depthwise convolution} constituting the \textit{depthwise separable convolution}. The reason why the \textit{separable} term is used in the name of the operation is because we are effectively separating between the channel-wise and the spatial/temporal-wise computations. The number of sums and multiplications required by this operation is $\frac{1}{N} \cdot \frac{1}{D}$ times the number of operations required by a regular convolution \cite{Howard2017}, where $N$ is the number of output channels after the \textit{pointwise convolution} is applied. This represents a meaningful performance improvement for big networks.
+The \textit{depthwise convolution} does not combine different channels for producing the output, and hence always produces an output tensor which has the same number of channels as the input tensor. This difference makes this operation much more efficient than the \textit{regular convolution}, at the cost of loosing the ability to generate new features by combining different channels. That is the reason why the \textit{pointwise convolution} is applied after the \textit{depthwise convolution} constituting the \textit{depthwise separable convolution}. The reason why the \textit{separable} term is used in the name of the operation is because we are effectively separating between the channel-wise and the spatial/temporal-wise computations. The number of sums and multiplications required by this operation is $\frac{1}{N} \cdot \frac{1}{S}$ times the number of operations required by a regular convolution \cite{Howard2017}, where $N$ is the number of output channels after the \textit{pointwise convolution} is applied. This represents a meaningful performance improvement for big networks.
 
 
 
@@ -314,14 +296,14 @@ Considering that the last dense layer can be prone to overfitting due to the hig
 
 
 
-\textit{Instance normalization}  has been used to normalize the intermediate outputs of each convolution \cite{Ulyanov2016, Zheng2018}. It simply consists of standardizing separately each of the samples across channels. Although it is typically used in generative modelling and style transfer efforts, it demonstrated to be very useful to improve training time of convergence and it has no undesirable effects at test time\footnote{In the case of \textit{Batch Normalization}, there can appear big differences of performance between train time and test time \cite{Ba2016}} \cite{Ulyanov2016}; it is considered a key element of this architecture. The input of the dense layer has been normalized using \textit{layer normalization} \cite{Ba2016}. \textit{Batch normalization} \cite{Ioffe2015} has been avoided because it is prone to introduce \textit{covariance shift}, degrading generalization \cite{Ba2016}. Figure \ref{fig:normcubes} summarizes the way these three normalization techniques operate.
+\textit{Instance normalization}  has been used to normalize the intermediate outputs of each convolution \cite{Ulyanov2016, Zheng2018}. It simply consists of standardizing separately each of the channels of every instance. Although it is typically used in generative modelling and style transfer efforts, it demonstrated to be very useful to improve training time of convergence and it has no undesirable effects at test time\footnote{In the case of \textit{Batch Normalization}, there can appear big differences of performance between train time and test time \cite{Ba2016}} \cite{Ulyanov2016}; it is considered a key element of this architecture. The input of the dense layer has been normalized using \textit{layer normalization} \cite{Ba2016}. \textit{Batch normalization} \cite{Ioffe2015} has been avoided because it is prone to introduce \textit{covariance shift}, degrading generalization \cite{Ba2016}. Figure \ref{fig:normcubes} summarizes the way these three normalization techniques operate.
 
 
 
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.7\linewidth]{img/normcubes}
-	\caption{Each cube represents a batch of data where the dimension marked as $B$ is the batch size, the one labeled as $N$ is the number of channels and $X$ is the number of temporal samples. (a) represents \textit{batch normalization}, (b) is \textit{instance normalization} and (c) shows \textit{layer normalization}. The shaded areas in the cubes represent the dimensions that are aggregated in each case for computing the statistics used to normalize the data (generally the mean and the standard deviation). As it can be noticed, the only normalization technique that depends on the batches of data is \textit{batch normalization}, that is why it is more sensitive to train-test distribution differences. As it can be noticed in the picture, \textit{instance normalization} is a specific version of \textit{layer normalization}}
+	\caption{Each cube represents a batch of data where $B$ is the instances dimension (with the batch size), $M$ is the channels dimension and $D$ is the spatial/temporal dimension. (a) represents \textit{batch normalization}, (b) is \textit{instance normalization} and (c) shows \textit{layer normalization}. The shaded areas in the cubes represent the dimensions that are aggregated in each case for computing the statistics used to normalize the data (generally the mean and the standard deviation). As it can be noticed, the only normalization technique that depends on instances of data in the batch is the \textit{batch normalization}, that is why it is more sensitive to train-test distribution differences. As it can be noticed in the picture, \textit{instance normalization} is a specific version of \textit{layer normalization} where each channel is normalized separately}
 	\label{fig:normcubes}
 \end{figure}
 
@@ -337,11 +319,11 @@ Versions V1 and V2 of the data set have 16,000 and 9,981 hold out samples for de
 
 All the results shown in this section have been measured on the test set. Five different models have been trained for each task in order to explore and report the effect of different random initializations of the weights of the network. With the aim of providing a baseline, human performance has been measured by 4 human subjects, who manually labeled $\sim 1000$ commands achieving different results. These results are reported in Table \ref{tab:comparative} along with the results of the proposed algorithm and the results reported by \cite{Andrade2018, Zhang2017, McMahan2018, Warden2018} on the matching tasks.
 
-Besides the global results, Figure \ref{fig:boxplot35002} shows the precision and the recall obtained for the most complex model (\textit{35-words-recognition} for data version V2). In conjunction with this figure, precision, recall and f1-score metrics have been included in the tables of the appendix, at the end of the article. 
+Besides the global results, Figure \ref{fig:boxplot35002} shows the precision and the recall obtained for the most complex model (\textit{35-words-recognition} for data version V2). In conjunction with this figure, precision, recall and f1-score metrics have been included in the tables of the appendix 2, at the end of the article. 
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=1.0\linewidth]{img/boxplot_35-words-recognition_002.eps}
+	\includegraphics[width=0.8\linewidth]{img/boxplot_35-words-recognition_002.eps}
 	\caption{Precision and recall for each of the different classes using the \textit{35-words-recognition} model trained with data version V2. Classes are sorted by descending f1-score.}
 	\label{fig:boxplot35002}
 \end{figure}
@@ -357,7 +339,8 @@ Besides the global results, Figure \ref{fig:boxplot35002} shows the precision an
 	
 	\begin{subtable}{1\textwidth}
 		\caption{Results for version 1 of the data set.}
-		\scalebox{0.65}{
+		\centering
+		\scalebox{0.75}{
 	\begin{tabular}{lcccccc}
 		\hline
 		 & Andrade et al.\cite{Andrade2018} & McMahan et al. \cite{McMahan2018}\footref{foot:max} & Warden \cite{Warden2018} & \textit{Xception-1d} & Human & p-value\footref{foot:ttest}      \\ \hline
@@ -371,7 +354,8 @@ Besides the global results, Figure \ref{fig:boxplot35002} shows the precision an
 \bigskip
 \begin{subtable}{1\textwidth}
 \caption{Results for version 2 of the data set.}
-\scalebox{0.65}{
+		\centering
+\scalebox{0.75}{
 \begin{tabular}{lcccccc}
 	\hline                                                                                                                           
 	            & Andrade et al. \cite{Andrade2018} & Zhang et al. \cite{Zhang2017}\footnote{the  best results obtained among all the trials performed by the autors have been selected \label{foot:max}} & Warden \cite{Warden2018} &           \textit{Xception-1d}           &     Human    & p-value \footnote{Student's t-test for the comparison of two means. $\alpha = 0.05$ \label{foot:ttest}} \\ \hline
@@ -411,10 +395,42 @@ A possible future line of work could be  the use of \textit{Xception-1d} archite
 
 \newpage
 
-\section*{Appendix}
+\section*{Appendix 1}
+The \textit{regular convolution} and \textit{depthwise convolution} operations \cite{Howard2017}  are defined \footnote{in both cases assuming a stride of one, \textit{SAME} padding and odd size convolution kernels} in equations \ref{eq:reg_conv} and  \ref{eq:dw_conv} for illustrative purposes, where 
+
+\begin{itemize}
+	\item $\mathbf{F}$ is the feature map over which the convolution operation is intended to be applied. It has a shape of $D \times M$, where $D$ represents the spatial/temporal dimension and $M$ the number of input channels.
+	\item $\mathbf{K}$ is the convolution kernel and has a shape of $S \times M$ where $S$ is the size of the kernel.
+	\item $\mathbf{G}$ is the output tensor produced by applying the \textit{regular convolution} operation with the filter $K$ over the input $F$ resulting in a vector of length $D$.
+	\item $\hat{\mathbf{G}}$ is the output tensor produced by applying the \textit{depthwise convolution} with the filter $K$ over the input $F$, resulting in a matrix with shape $D \times M$. The number of output channels is restricted to be equal to the number of input channels $M$. 
+\end{itemize}
+
+
+\begin{equation}
+\mathbf{G}_{x} = \sum_{s, m}^{S,M} \mathbf{K}_{s, m} \cdot \mathbf{F}_{x+s-\frac{S-1}{2}, m}
+\label{eq:reg_conv}
+\end{equation}
+
+\begin{equation}
+\hat{\mathbf{G}}_{x, m} = \sum_{s}^{S} \mathbf{K}_{s, m} \cdot \mathbf{F}_{x+s-\frac{S-1}{2}, m} 
+\label{eq:dw_conv}
+\end{equation}
+
+See that $\mathbf{G}_{x} =  \sum_{m}^{M} \hat{\mathbf{G}}_{x, m}$. A \textit{pointwise convolution} would be equivalent of applying a \textit{regular} convolution with $S=1$. 
+
+The \textit{depthwise separable convolution} is composite function of a \textit{pointwise convolution} and a \textit{depthwise convolution} as follows: $PW(DW(F,W_{d}),W_{p})$ where $PW$ and $DW$ refer to the \textit{pointwise} and \textit{depthwise convolutions}, and $W_{p}$, $W_{d}$ to their weights, similarly.
+
+The \textit{regular convolution} layer targeting $N$ output channels has a computational cost of $D \cdot M \cdot N \cdot S$. The \textit{depthwise convolution} has a computational cost of $D \cdot M \cdot S$,  and the \textit{separable convolution} $D \cdot M \cdot N$. Therefore the \textit{depthwise separable convolution} has a computational cost  of $D \cdot M  \cdot S + D \cdot M \cdot N$, i.e. the sum of its two constituting operations. Hence, by using the \textit{depthwise separable convolution} in place of the \textit{regular} one we have a cost reduction of:
+
+$$ \frac{D \cdot M \cdot S  + D \cdot M \cdot N} {D \cdot M \cdot N \cdot S} = \frac{1}{N} + \frac{1}{S} $$
+
+
+\newpage
+
+\section*{Appendix 2}
 
 \begin{table}[h!] \centering \scriptsize
-	\caption{Detailed results for task \textit{35-words-recognition} and data version V1, sorted by decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
+	\caption{Detailed results for task \textit{35-words-recognition} and V1 data set, in decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
 	\begin{tabular}{lcccc}
 		\toprule
 		{} &       precision &          recall &        f1-score & support \\
@@ -456,9 +472,8 @@ A possible future line of work could be  the use of \textit{Xception-1d} archite
 \end{table}
 
 
-
-\begin{table} \centering \scriptsize
-	\caption{Detailed results for task \textit{35-words-recognition} and data version V2, sorted by decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
+\begin{table}[h!] \centering \scriptsize
+	\caption{Detailed results for task \textit{35-words-recognition} and V2 data set, in decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
 	\begin{tabular}{lcccc}
 		\toprule
 		{} &       precision &          recall &        f1-score & support \\
@@ -507,7 +522,7 @@ A possible future line of work could be  the use of \textit{Xception-1d} archite
 
 
 \begin{table} \centering \scriptsize
-	\caption{Detailed results for task \textit{20-commands-recognition} and data version V1, sorted by decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
+	\caption{Detailed results for task \textit{20-commands-recognition} V1 data set, in decreasing f1-score order. The columns ``precision'', ``recall'' and ``f1-score'' have been represented as the mean $\pm$ the standard deviation in percentage scale. }
 	\begin{tabular}{lcccc}
 		\toprule
 		{} &       precision &          recall &        f1-score & support \\
