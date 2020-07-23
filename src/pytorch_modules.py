@@ -41,7 +41,7 @@ class TransferenceFunctionModule(nn.Module):
 
 
 class XceptionModule1d(nn.Module):
-    # Implementation of the xception basic conv block (1-dimensional). Code based on:
+    # Implementation of the xception basic conv block (1-dimensional). 
     def __init__(self, in_channels, out_channels, n_modules, kernel_size=3, pooling_stride=1, bn_momentum=0.995):
         super(XceptionModule1d, self).__init__()
         padding = int((kernel_size - 1) / 2)
