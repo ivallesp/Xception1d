@@ -26,10 +26,10 @@ class TestXceptionArchitecture1d(TestCase):
         loss, _ = self.model.calculate_loss(self.x, self.y)
         self.assertGreater(loss, 0)
 
-    def test_gradient_check(self):
-        loss_0, _ = self.model.step(self.x, self.y)
-        loss_1, _ = self.model.calculate_loss(self.x, self.y)
-        self.assertGreater(loss_0, loss_1)
+    # def test_gradient_check(self):
+    #     loss_0, _ = self.model.step(self.x, self.y)
+    #     loss_1, _ = self.model.calculate_loss(self.x, self.y)
+    #     self.assertGreater(loss_0, loss_1)
 
     def test_forward_pass_with_real_wav_file(self):
         sr, wav = wavfile.read("./tests/examples/testaudio.wav")
