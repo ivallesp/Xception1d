@@ -12,6 +12,12 @@
 \usepackage[backend=bibtex,style=verbose]{biblatex}
 \addbibresource{mybibfile.bib}
 
+\setbeamertemplate{sidebar right}{}
+\setbeamertemplate{footline}{%
+	\hfill\usebeamertemplate***{navigation symbols}
+	\hspace{1cm}\insertframenumber{}/\inserttotalframenumber}
+
+
 % Define headline format
 \setbeamertemplate{headline}
 { %scshape
@@ -50,7 +56,7 @@
 \author[UV]{Iván Vallés-Pérez, Fernando Mateo, Joan Vila-Francés, Antonio J. Serrano-López, Emilio Soria-Olivas}
 \institute[UV]{Escola Tècnica Superior d\textsc{\char13}Enginyeria, University of Valencia, Avenida de la Universitat s/n 46100 Burjassot, Valencia, Spain}
 
-\date{July 20th, 2020}
+\date{July 29th, 2020}
 
 % --------------------------------------------- NEW SLIDE ------------------------------
 \frame{\titlepage}
@@ -60,8 +66,8 @@
 \frame{\frametitle{The field of voice-activated virtual assistants is booming}
     \begin{itemize}
     \item Several big companies like Amazon, Google, Baidu and Apple have already developed their version of virtual assistant
-    \item In particular, Deep Learning (DL) models have revolutionized the field of automatic speech recognition \footfullcite{Nassif2019}, as language features are highly hierarchical.
-    \item There are multiple open research lines.
+    \item In particular, \textbf{Deep Learning (DL) models} have revolutionized the field of automatic speech recognition \footfullcite{Nassif2019}, as \textbf{language features are highly hierarchical}.
+    \item There are multiple \textbf{open research lines}.
     \begin{itemize}
         \item Increasing the accuracy and relevance of the responses \footfullcite{milabot2017}
         \item Reducing the answer delay \footfullcite{Han2017}
@@ -74,9 +80,9 @@
 % --------------------------------------------- NEW SLIDE ------------------------------
 \frame{\frametitle{This work focuses on increasing the accuracy of the voice commands recognition}
 \begin{itemize}
-    \item The \textbf{objective} of this project is to achieve the best possible accuracy on the recognition of speech commands under a limited vocabulary setting
+    \item The \textbf{objective} of this project is to achieve the \textbf{best possible accuracy} on the recognition of speech commands under a \textbf{limited vocabulary setting}
     \item For that, we propose using Deep Learning techniques – more specifically: \textbf{convolutional neural networks}
-    \item No complex pre-processing techniques (such as \textit{FFT} and spectrograms) are intended to be applied to the audio clips: we are going to stay in the \textbf{temporal domain}
+    \item \textbf{No complex pre-processing} techniques (such as \textit{FFT} and spectrograms) are intended to be applied to the audio clips: we are going to stay in the \textbf{temporal domain}
     \item To quantify the performance of the solution, we will not only measure against existing \textbf{benchmarks}, but also against manually measured \textbf{human accuracy}
 \end{itemize}
 }
@@ -88,8 +94,8 @@
     \begin{itemize}
         \item \textit{Google Tensorflow speech commands data set}\footfullcite{speechcommands} is a collection of categorized audio utterances released by Google in 2018
         \item Noisy and low-quality audio clips, recoded in uncontrolled environments
-        \item More than 100,000 1s-length audio clips belonging to 35 different classes\footnote{According to version 2 of the data set. Version 1 contains around 65,000 clips and 30 different classes}
-        \item Two versions of the data set are available, where V2 is an extended and cleaned version of V1. Results have been reported on both versions of the data set
+        \item More than\textbf{ 100,000 1s-length audio clips} belonging to \textbf{35 different classes}\footnote{According to version 2 of the data set. Version 1 contains around 65,000 clips and 30 different classes}
+        \item \textbf{Two versions} of the data set are available, where V2 is an extended and cleaned version of V1. Results have been reported on both versions of the data set
 
     \end{itemize}
 
@@ -161,11 +167,46 @@
 }
 
 % --------------------------------------------- NEW SLIDE ------------------------------
+\frame{\frametitle{Several data augmentation techniques have been used to enhance generalization}
+	\small
+	The \movie[inlinesound, samplingrate=16000, showcontrols=false]{[original]}{audio/distorted/original.wav} data set has been augmented through the \textbf{application of 5 different distortions} with random intensities \footfullcite{Proakis2007}:
+	\begin{itemize}
+		\item \textbf{Resampling}: expanding and contracting the audio clip + center-cropping. Examples:
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/resample_0.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/resample_1.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/resample_4.wav}
+		\item \textbf{Pitch shift}: frequency increase/decrease to produce more acute/severe voices. Examples:
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/pitch_shift_0.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/pitch_shift_1.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/pitch_shift_3.wav}
+		\item \textbf{Saturation}: amplitude increase until saturation. Examples:
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/saturate_3.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/saturate_1.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/saturate_2.wav}
+		\item \textbf{Time offset}: left or right zero padding. Examples:
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/time_offset_3.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/time_offset_1.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/time_offset_2.wav}
+		\item \textbf{Noise addition}: sum of white noise on the temporal sequence. Examples:
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/noise_3.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/noise_1.wav}
+		\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/noise_4.wav}
+	\end{itemize}
+	All the distortions are applied together with random intensities only over the training data, producing 5 new transformations of the original recordings
+	\movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/mix_0.wav}
+	\movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/mix_1.wav}
+	\movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/mix_2.wav}
+	\movie[inlinesound, samplingrate=16000, showcontrols=false]{[4]}{audio/distorted/mix_3.wav}
+	\movie[inlinesound, samplingrate=16000, showcontrols=false]{[5]}{audio/distorted/mix_4.wav}
+}
+
+
+% --------------------------------------------- NEW SLIDE ------------------------------
 \frame{\frametitle{Four different tasks have been defined with the available data for benchmarking purposes}
 
     \begin{itemize}
-        \item We defined a set of ``tasks'' by pre-selecting a subset of the classes and assigning the others to a synthetic ``unknown class''.
-        \item This groups have been established to be able to compare with the existing SOTA benchmarks \footfullcite{Andrade2018} \footfullcite{McMahan2018} \footfullcite{Warden2018} \footfullcite{Zhang2017}.
+        \item We defined a set of ``tasks'' by pre-selecting a subset of the classes and \textbf{assigning the others to a synthetic ``unknown class''}.
+        \item These groups have been established to be able to compare with the existing SOTA benchmarks \footfullcite{Andrade2018} \footfullcite{McMahan2018} \footfullcite{Warden2018} \footfullcite{Zhang2017}.
         \begin{enumerate}[a.]
             \item \textit{35-words-recognition}
             \item \textit{20-commands-recognition} + \textit{unknown}
@@ -211,52 +252,18 @@
 
 }
 
-% --------------------------------------------- NEW SLIDE ------------------------------
-\frame{\frametitle{Several data augmentation techniques have been used to enhance generalization}
-    \small
-    The \movie[inlinesound, samplingrate=16000, showcontrols=false]{[original]}{audio/distorted/original.wav} data set has been augmented through the random application of 5 different distortions \footfullcite{Proakis2007}:
-    \begin{itemize}
-        \item \textbf{Resampling}: expanding and contracting the audio clip + center-cropping. Examples:
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/resample_0.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/resample_1.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/resample_4.wav}
-        \item \textbf{Pitch shift}: frequency increase/decrease to produce more acute/severe voices. Examples:
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/pitch_shift_0.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/pitch_shift_1.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/pitch_shift_3.wav}
-        \item \textbf{Saturation}: amplitude increase until saturation. Examples:
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/saturate_3.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/saturate_1.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/saturate_2.wav}
-        \item \textbf{Time offset}: left or right zero padding. Examples:
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/time_offset_3.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/time_offset_1.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/time_offset_2.wav}
-        \item \textbf{Noise addition}: sum of white noise on the temporal sequence. Examples:
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/noise_3.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/noise_1.wav}
-        \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/noise_4.wav}
-    \end{itemize}
-    All the distortions are applied together with random intensities only over the training data, producing 5 new transformations of the original recordings
-    \movie[inlinesound, samplingrate=16000, showcontrols=false]{[1]}{audio/distorted/mix_0.wav}
-    \movie[inlinesound, samplingrate=16000, showcontrols=false]{[2]}{audio/distorted/mix_1.wav}
-    \movie[inlinesound, samplingrate=16000, showcontrols=false]{[3]}{audio/distorted/mix_2.wav}
-    \movie[inlinesound, samplingrate=16000, showcontrols=false]{[4]}{audio/distorted/mix_3.wav}
-    \movie[inlinesound, samplingrate=16000, showcontrols=false]{[5]}{audio/distorted/mix_4.wav}
-}
-
 \section{Methods}
 % --------------------------------------------- NEW SLIDE ------------------------------
 \frame{\frametitle{A new CNN architecture based on the Xception network has been designed}
 \begin{itemize}
-    \item Xception\footfullcite{FChollet2017} is a CNN-based deep learning architecture published by François Chollet (Google) in 2017 which recently achieved SOTA results in multiple computer vision tasks
-    \item It uses \textit{depthwise separable convolutions} and \textit{residual connections}. Both together lead to a very efficient yet deep CNN.
+    \item Xception\footfullcite{FChollet2017} is a CNN-based deep learning architecture published by François Chollet (Google) in 2017 which recently achieved \textbf{SOTA results in multiple computer vision tasks}
+    \item It uses \textit{depthwise separable convolutions} and \textit{residual connections}. Both together lead to a very \textbf{efficient yet deep} CNN.
     \item This algorithm is designed to work with images (2-D data). We have adapted it to work with sequences (1-D data): \textbf{Xception-1d}
 \end{itemize}
 }
 
 % --------------------------------------------- NEW SLIDE ------------------------------
-\frame{\frametitle{The \textit{depthwise separable convolution} operation is more efficient than the common convolution (1/2)}
+\frame{\frametitle{The \textit{depthwise separable convolution} operation is more efficient than the regular convolution (1/2)}
 \small
 \begin{columns}
     \begin{column}{0.5\textwidth}
@@ -287,8 +294,8 @@
 \vspace{0.3cm}
 The \textit{depthwise separable convolution} consists of two sequential steps
 \begin{itemize}
-    \item \textit{Depthwise convolution}\footfullcite{Yunhui2019}: single filter per channel. Modifies only spatial/temporal dimension(s). Number of channels remains intact. See equation \ref{eq:dw_conv}
-    \item \textit{Pointwise convolution}\footfullcite{Gao2018}: size-1 convolutions. Modifies only the channels dimension. Spatial/temporal dimension(s) remain intact. See equation \ref{eq:reg_conv}
+    \item \textit{Depthwise convolution}\footfullcite{Yunhui2019}: \textbf{single filter per channel}. Modifies only spatial/temporal dimension(s). Number of channels remains intact. See equation \ref{eq:dw_conv}
+    \item \textit{Pointwise convolution}\footfullcite{Gao2018}: \textbf{size-1 convolutions}. Modifies only the channels dimension. Spatial/temporal dimension(s) remain intact. See equation \ref{eq:reg_conv}
 \end{itemize}
 }
 
@@ -297,7 +304,7 @@ The \textit{depthwise separable convolution} consists of two sequential steps
 
 \begin{itemize}
     \item The \textit{depthwise separable convolution} receives its name because it \textbf{separates} the channel-wise and spatial/temporal-wise computations.
-    \item The number of operations required by the depthwise-separable convolution is $\frac{1}{N} \cdot \frac{1}{S}$ \textbf{times} the number of operations required by a regular convolution \footfullcite{Howard2017} (where $N$ is the number of output channels and $S$ is the filter size), which represents a meaningful performance improvement for big networks.
+    \item The number of operations required by the depthwise-separable convolution is $\frac{1}{N} \cdot \frac{1}{S}$ \textbf{times} the number of operations required by a regular convolution \footfullcite{Howard2017} (where $N$ is the number of output channels and $S$ is the filter size), which represents a\textbf{ meaningful performance improvement} for big networks.
     \item E.g. if we applied a size-5 convolution to generate a signal with 2 channels (e.g. a stereo audio signal), a regular convolution would need $5 * 2 = 10$ times more computation than a \textit{depthwise separable convolution}.
 \end{itemize}
 }
@@ -307,7 +314,7 @@ The \textit{depthwise separable convolution} consists of two sequential steps
     \begin{figure}[h!]
         \centering
         \includegraphics[width=1\linewidth]{img/arch}
-        \caption{Diagram summarizing the architecture of \textit{Xception-1d}. It's composed of three main modules: (a) the entry module, responsible for adapting the raw wave into a condensed representation, (b) the middle module responsible for learning the representation for extracting useful features from the raw data, (c) the classification module, responsible for mapping the learned representation into each output class}
+        \caption{Diagram summarizing the architecture of \textit{Xception-1d}. It's composed of three main modules: (a) \textbf{the entry module}, responsible for adapting the raw wave into a condensed representation, (b) the\textbf{ middle module} responsible for learning the representation for extracting useful features from the raw data, (c) \textbf{the classification module}, responsible for mapping the learned representation into each output class}
     \end{figure}
 
 }
@@ -317,9 +324,9 @@ The \textit{depthwise separable convolution} consists of two sequential steps
     \begin{columns}
         \begin{column}{0.5\textwidth}
             \begin{itemize}
-                \item Each Xception-1d block contains two chained depth-wise separable convolutions with a residual connection, followed by an average pooling layer
-                \item Instance Normalization has been used as a way of reducing the covariance shift, and hence enhance generalization
-                \item The skip connections of every block allows training deeper networks
+                \item Each Xception-1d block contains $n_{\text{mod}}$ \textbf{chained depth-wise separable convolutions} with a \textbf{residual connection}, followed by an \textbf{average pooling layer}
+                \item \textbf{Instance Normalization} has been used as a way of reducing the covariance shift, and hence enhance generalization
+                \item The \textbf{skip connections} of every block allows training deeper networks
             \end{itemize}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -338,8 +345,8 @@ The \textit{depthwise separable convolution} consists of two sequential steps
 \frame{\frametitle{The data has been divided in train/dev/test to enable model experimentation}
 \begin{itemize}
     \item The \textbf{cross-validation split} has been provided by the authors of the data set (holding about 11,000 samples for development and other about 11,000 for test purposes)
-    \item The models have been trained for \textbf{50 epochs} in each case with early-stopping and the parameters have been manually tuned
-    \item Five different models have been trained for each task in order to explore and report the effect of different \textbf{random initializations} of the weights of the network
+    \item The models have been trained for \textbf{50 epochs} in each case with \textbf{early-stopping }and the parameters have been manually tuned
+    \item \textbf{Five different models} have been trained for each task in order to explore and report the effect of different \textbf{random initializations} of the weights of the network
     \item With the aim of providing a baseline, \textbf{human performance} has been measured by \textbf{4 human subjects}, who manually labeled \textbf{1000 commands}
     \item The source code of this study is publicly available on \textbf{GitHub}:  https://github.com/ivallesp/Xception1d
 \end{itemize}
@@ -395,10 +402,11 @@ The \textit{depthwise separable convolution} consists of two sequential steps
 \end{figure}
 }
 
-\section{Conclusions}
+\section{Discussion and conclusions}
 \frame{\frametitle{We suggest Xception-1d as the default architecture for a speech commands classification problem}
 \begin{itemize}
-    \item We showed how a neural net that succeeded in the computer vision field can be adapted to the speech recognition field and achieve state of the art results
+	\item The \textbf{proposed architecture} has around \textbf{20M parameters}. We should study the viability of implementing this model in an embedded device.
+    \item We showed how a neural net that succeeded in the computer vision field can be \textbf{adapted} to the speech recognition field and achieve state of the art results
     \item We suggest \textit{Xception-1d} as the \textit{de facto} architecture when facing this kind of task
 \end{itemize}
 }
