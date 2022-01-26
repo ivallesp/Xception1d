@@ -1,0 +1,93 @@
+\documentclass{elsarticle}
+
+\usepackage{lineno,hyperref}
+
+\usepackage{subcaption,siunitx,booktabs}
+
+
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{scrextend}
+\usepackage{tablefootnote}
+
+
+\usepackage[a4paper, total={6in, 9in}]{geometry}
+
+
+
+\modulolinenumbers[5]
+
+\journal{Amazon - Alexa TTS}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% Elsevier bibliography styles
+%%%%%%%%%%%%%%%%%%%%%%%
+%% To change the style, put a % in front of the second line of the current style and
+%% remove the % from the second line of the style you would like to use.
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Numbered
+%\bibliographystyle{model1-num-names}
+
+%% Numbered without titles
+%\bibliographystyle{model1a-num-names}
+
+%% Harvard
+%\bibliographystyle{model2-names.bst}\biboptions{authoryear}
+
+%% Vancouver numbered
+%\usepackage{numcompress}\bibliographystyle{model3-num-names}
+
+%% Vancouver name/year
+%\usepackage{numcompress}\bibliographystyle{model4-names}\biboptions{authoryear}
+
+%% APA style
+%\bibliographystyle{model5-names}\biboptions{authoryear}
+
+%% AMA style
+%\usepackage{numcompress}\bibliographystyle{model6-num-names}
+
+%% `Elsevier LaTeX' style
+\bibliographystyle{elsarticle-num}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\linenumbers
+
+\section*{Appendix 3: Experimental framework}
+In this appendix we describe the most important details of the experimental framework used along the \textit{Xception1d} development and the design process followed.
+
+\begin{enumerate}
+	\item \underline{Bibliography review}: we found several works proposing different solutions to the \textit{Google Speech-Commands} problem.  \textit{Andrade et al.} \cite{Andrade2018} proposed using \textit{convolutional recurrent neural networks} with \textit{self-attention}, over the \textit{Mel-spectrograms} generated from the raw audio signals. \textit{Zhang et al.} \cite{Zhang2017} used a bunch of different architectures (\textit{MLPs}, \textit{CNNs}, various \textit{RNNs}, \textit{Convolutional RNNs} and \textit{depthwise separable CNNs}) focusing on building a lightweight model for implementing it into a microcontroller. They trained their models over a set of features extracted step using \textit{Log-Mel Filter Bank Energies} and \textit{Mel-frequency Cepstral Coefficients}.  \textit{McMahan and Rao} \cite{McMahan2018} explore \textit{dilated convolutions} and \textit{transfer learning}, applied to the same problem; we reported their best results (with or without \textit{transfer learning}). Finally, \textit{Warden} \cite{Warden2018} uses \textit{convolutional neural networks} over a set of \textit{log-Mel filterbank} features to solve the same problem. All the works reported (to the best of our knowledge) propose shifting the data from the temporal to the frequency domain before running the model. 
+	\item \underline{Hypotheses}: after the literature review, the following hypotheses were defined
+	\begin{itemize}
+		\item A neural network can achieve a competitive performance while operating in the temporal domain.
+		\item High performing architectures in computer vision should also perform well with audio signals.
+		\item A high performing model should mean being competitive with the human performance (in this case).
+	\end{itemize}
+	\item \underline{Benchmark consolidation}: there are two versions of the \textit{Google Speech-Commands} data set. Different studies \cite{Andrade2018, Warden2018} provide results on the two versions while others \cite{McMahan2018, Zhang2017} only focus on V1 and V2 respectively. Besides, each of the previous references define different subtasks (consisting of simplifying the problem by reducing the subset of classes to predict; more details in the manuscript). We have run our model against all the combinations of data set version and task, in order to enable the comparison between all the existing benchmarks. 
+	\item \underline{Cross-validation}: with the aim of facilitating results reproduction and fair benchmarking, we used the train-dev-test splits suggested by the authors of the data set \cite{speechcommands, Warden2018} (containing about 80\%-10\%-10\% of the data respectively).
+	\item \underline{Architecture design iterations}: to get our final architecture, we have iterated across a set of experiments. Below, a brief summary of these steps is included\footnote{We don't have record of the accuracy contribution of the different components changed at each iteration}  (in chronological order).
+	\begin{itemize}
+	\item Following the self-imposed constraint of operating at temporal domain, we quickly discarded the possibility of implementing an RNN based architecture over the raw signal, due to their known issues on finding long-term dependencies, and their inability to parallelize across samples. Attention models were also discarded due to its quadratic computational complexity with respect to the number of time steps in the input signal. 
+	\item The first architecture was designed mimicking the original \textit{Xception architecture} \cite{FChollet2017}, finding that the network didn't generalize well.
+	\item We tweaked the momentum  hyperparameters of the \textit{batch-normalization} operations until we achieved good performance on the validation set.
+	\item We realized that although the network performed well out of sample, the training accuracy quickly reached 100\% in few epochs, despite the use of regularization techniques like \textit{dropout}. This motivated us to implement a data-augmentation pipeline which solved the problem
+	\item We decided to switch to a normalization method that didn't depend on the instances dimension, to remove the dependence on the \textit{momentum} hyperparameters. We tried \textit{layer normalization} and \textit{instance normalization} in different combinations, concluding that the best setting was to use \textit{instance normalization} for the \textit{convolutional layers} and \textit{layer normalization} for the \textit{fully-connected} ones (in the head). 
+	\item To improve further the results, we decided to implemented a method to decrease the \textit{learning rate} every time a \textit{plateau} was reached.
+	\end{itemize}
+	\item \underline{Repeated measurements}: we run every experiment 5 times with different random seeds (40 runs; 4 tasks $\times$ 2 data versions $\times$ 5 random seeds) in order to evaluate the impact of different \textit{random initializations}.
+	\item We measured the \underline{human accuracy} level by using 4 subjects to manually annotate 1000 random recordings per subject. We run a \textit{Student's T} test to see in which cases the accuracy of the model was significantly different than the human accuracy.
+	\item As a \underline{test experiment}, we implemented a \textit{Telegram} bot in order to check the ability of the model to generalize on fresh data. We concluded that the model was able to perform very well in these circumstances, although we didn't properly measure and report the results.
+\end{enumerate}
+% \cite{Andrade2018, Zhang2017, McMahan2018, Warden2018}
+
+We run each of these trials in a single \textit{GPU} environment (\textit{Nvidia Titan Pascal}). We trained the models using \textit{PyTorch} and we used \textit{Tensorboard} (with \textit{TensorboardX}) to analyze and track the experiments. Each experiment lasted around 1-3 days, depending on the task being solved.
+
+\bibliographystyle{abbrvnat}
+\bibliography{mybibfile}
+
+
+
+\end{document}
