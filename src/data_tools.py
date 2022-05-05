@@ -88,7 +88,7 @@ def time_offset_wavfile(wav, shift_factor):
 def add_noise_to_wavfile(wav, amplitude_factor, clip_to_original_range=False):
     max_wav = max(wav)
     min_wav = min(wav)
-    noise = np.random.rand(*wav.shape) * (max_wav - min_wav) - min_wav
+    noise = np.random.rand(*wav.shape) * (max_wav - min_wav) + min_wav
     wav = wav + amplitude_factor * noise
     if clip_to_original_range:
         wav = np.clip(wav, min_wav, max_wav)
